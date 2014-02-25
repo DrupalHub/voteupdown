@@ -1,0 +1,70 @@
+<?php
+/**
+ * @file
+ * vote_up_down.module
+ */
+
+/**
+ * Implements hook_field_info().
+ */
+function vote_up_down_field_info() {
+  $field_info['vote_up_down'] = array(
+    'label' => t('Vote up down'),
+    'description' => t('Supply voting widgets for entity.'),
+    'settings' => array(),
+    'instance_settings' => array(),
+    'default_widget' => 'updown',
+    'default_formatter' => 'updown',
+  );
+
+  return $field_info;
+}
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function vote_up_down_field_widget_info() {
+  ctools_include('plugins');
+  $widgets = ctools_get_plugins('vote_up_down', 'widgets');
+
+  foreach ($widgets as $widget => $info) {
+    $widgets[$widget] = array(
+      'label' => $info['title'],
+      'description' => $info['description'],
+      'field types' => array('vote_up_down'),
+      'settings' => array(),
+    );
+  }
+
+  return $widgets;
+}
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function vote_up_down_ctools_plugin_api($module, $api) {
+  if ($module == 'vote_up_down' && $api == 'widgets') {
+    return array('version' => 1);
+  }
+}
+
+/**
+ * Implements hook_ctools_plugin_type().
+ */
+function vote_up_down_ctools_plugin_type() {
+  $plugins['widgets'] = array(
+    'classes' => array('class'),
+  );
+
+  return $plugins;
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function vote_up_down_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'vote_up_down' && $plugin_type == 'widgets') {
+    return 'plugins/widgets';
+  }
+}
+
