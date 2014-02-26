@@ -3,3 +3,5 @@ description = Supply field for voting up/down upon an entity
 core = 7.x
 
 dependencies[] = entity
+
+files[] = includes/vote_up_down.class.inc

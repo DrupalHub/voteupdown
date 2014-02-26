@@ -68,3 +68,30 @@ function vote_up_down_ctools_plugin_directory($owner, $plugin_type) {
   }
 }
 
+/**
+ * Get the widget class.
+ *
+ * @param $widget
+ *  The name of the widget.
+ *
+ * @throws Exception
+ * @return voteUpDownInterface
+ */
+function vote_up_down_load_widget($widget) {
+  $object_cache = drupal_static(__FUNCTION__);
+
+  if (!isset($object_cache[$widget])) {
+    ctools_include('plugins');
+    $plugin = ctools_get_plugins('vote_up_down', 'widgets', $widget);
+    $class = ctools_plugin_load_class('vote_up_down', 'widgets', $widget, 'class');
+
+    if (!$class) {
+      throw new Exception(t('The @widget class id undefined', array('@widget' => $plugin['class'])));
+    }
+
+    $object_cache[$widget] = new $class();
+  }
+
+  return $object_cache[$widget];
+}
+

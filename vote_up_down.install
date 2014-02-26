@@ -1,0 +1,32 @@
+<?php
+/**
+ * @file
+ * vote_up_down.install
+ */
+
+/**
+ * Implements hook_field_schema().
+ */
+function vote_up_down_field_schema($field) {
+  if ($field['type'] == 'vote_up_down') {
+    $columns = array(
+      'value' => array(
+        'type' => 'int',
+        'length' => 12,
+        'not null' => FALSE,
+      ),
+      'user' => array(
+        'type' => 'int',
+        'length' => 12,
+        'not null' => FALSE,
+      ),
+    );
+
+    return array(
+      'columns' => $columns,
+      'indexes' => array(
+        'format' => array('value'),
+      ),
+    );
+  }
+}
