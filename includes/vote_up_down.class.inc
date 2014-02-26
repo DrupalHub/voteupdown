@@ -7,8 +7,11 @@ interface voteUpDownInterface {
 
   /**
    * Instance settings.
+   *
+   * @param $settings
+   *  The settings of the instance.
    */
-  public function instanceSettings($form, $form_state);
+  public function instanceSettings($settings);
 
   /**
    * Validating the value before saving the data to the DB.

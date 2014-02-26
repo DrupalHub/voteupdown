@@ -16,9 +16,13 @@ class voteUpDownThumbs implements voteUpDownInterface {
 
   /**
    * Instance settings.
+   *
+   * @{@inheritdoc}
    */
-  public function instanceSettings($form, $form_state) {
+  public function instanceSettings($settings) {
+    $form = array();
 
+    return $form;
   }
 
   /**

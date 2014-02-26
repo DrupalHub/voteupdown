@@ -95,3 +95,15 @@ function vote_up_down_load_widget($widget) {
   return $object_cache[$widget];
 }
 
+/**
+ * Implements hook_field_instance_settings_form().
+ */
+function vote_up_down_field_instance_settings_form($field, $instance) {
+  $settings = $instance['settings'];
+
+  $widget = vote_up_down_load_widget($instance['widget']['type']);
+
+  return $widget->instanceSettings($settings);
+}
+
+
