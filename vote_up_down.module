@@ -40,6 +40,27 @@ function vote_up_down_field_widget_info() {
 }
 
 /**
+ * Implementation of hook_field_formatter_info().
+ */
+function vote_up_down_field_formatter_info() {
+  return array(
+    'vote_up_down' => array(
+      'label' => t('Vote up down'),
+      'field types' => array('vote_up_down'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_theme().
+ *
+ * Declaring themes for plugins.
+ */
+function vote_up_down_theme() {
+  return array();
+}
+
+/**
  * Implements hook_ctools_plugin_api().
  */
 function vote_up_down_ctools_plugin_api($module, $api) {
@@ -89,7 +110,7 @@ function vote_up_down_load_widget($widget) {
       throw new Exception(t('The @widget class id undefined', array('@widget' => $plugin['class'])));
     }
 
-    $object_cache[$widget] = new $class();
+    $object_cache[$widget] = new $class($plugin);
   }
 
   return $object_cache[$widget];
@@ -99,11 +120,30 @@ function vote_up_down_load_widget($widget) {
  * Implements hook_field_instance_settings_form().
  */
 function vote_up_down_field_instance_settings_form($field, $instance) {
-  $settings = $instance['settings'];
-
-  $widget = vote_up_down_load_widget($instance['widget']['type']);
-
-  return $widget->instanceSettings($settings);
+  return vote_up_down_load_widget($instance['widget']['type'])->instanceSettings($instance['settings']);
 }
 
+/**
+ * Implements hook_field_widget_form().
+ */
+function vote_up_down_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  return vote_up_down_load_widget($instance['widget']['type'])->widget($form, $form_state, $field, $instance, $langcode, $items, $delta, $element);
+}
 
+/**
+ * Implements hook_field_formatter_view().
+ */
+function vote_up_down_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  return vote_up_down_load_widget($instance['widget']['type'])->view($entity_type, $entity, $field, $instance, $langcode, $items, $display);
+}
+
+/**
+ * Implements hook_field_prepare_view().
+ */
+function vote_up_down_field_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items) {
+  foreach ($entities as $id => $entity) {
+    if (empty($items[$id])) {
+      $items[$id][0] = $entity;
+    }
+  }
+}

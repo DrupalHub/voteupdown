@@ -21,10 +21,10 @@ interface voteUpDownInterface {
   /**
    * Displaying the values of the form.
    */
-  public function view();
+  public function view($entity_type, $entity, $field, $instance, $langcode, $items, $display);
 
   /**
    * When editing the field through the UI.
    */
-  public function edit();
+  public function widget(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element);
 }

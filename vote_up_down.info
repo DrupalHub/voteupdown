@@ -5,3 +5,4 @@ core = 7.x
 dependencies[] = entity
 
 files[] = includes/vote_up_down.class.inc
+files[] = includes/vote_up_down_basic.class.inc

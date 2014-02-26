@@ -9,18 +9,38 @@ $plugin = array(
   'description' => t('Thumbs up and down widget.'),
   'class' => 'voteUpDownThumbs',
   'alter template variables' => 'vud_widget_thumbs_alter_template_vars',
-  'js' => 'thumbs.js',
+  'assets' => array(
+    'js' => array('thumbs.js'),
+    'css' => array('thumbs.css'),
+  ),
+  'theme' => 'vote_up_down_thumbs',
 );
 
 class voteUpDownThumbs implements voteUpDownInterface {
 
+  public $settings;
+
+  function __construct(array $settings = array()) {
+    $this->settings = $settings;
+  }
+
   /**
-   * Instance settings.
-   *
    * @{@inheritdoc}
    */
   public function instanceSettings($settings) {
     $form = array();
+
+    $form['appearance'] = array(
+      '#type' => 'radios',
+      '#title' => t('Appearance'),
+      '#description' => t('Choose how to widget will appear.'),
+      '#options' => array(
+        'up_only' => t('Only up'),
+        'both' => t('Up and down'),
+        'down_only' => t('Only down'),
+      ),
+      '#default_value' => empty($settings['appearance']) ? 'both' : $settings['appearance'],
+    );
 
     return $form;
   }
@@ -35,24 +55,25 @@ class voteUpDownThumbs implements voteUpDownInterface {
   /**
    * Displaying the values of the form.
    */
-  public function view() {
+  public function view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+    $elements = array();
 
+    $foo = theme('melingo_dictionary_term_translate_word');
+    dpm($foo);
+
+    foreach ($items as $delta => $item) {
+      $elements[$delta] = array(
+        '#markup' => 'a',
+      );
+    }
+
+    return $elements;
   }
 
   /**
    * When editing the field through the UI.
    */
-  public function edit() {
-
+  public function widget(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+    // todo: Handle this later.
   }
-}
-
-function vud_widget_thumbs_alter_template_vars($template_type, &$variables) {
-  $criteria['entity_id'] = $variables['entity_id'];
-  $criteria['entity_type'] = $variables['type'];
-  $criteria['value_type'] = 'points';
-  $criteria['tag'] = $variables['tag'];
-  $criteria['function']  = 'sum';
-  $vote_sum = votingapi_select_single_result_value($criteria);
-  $variables['vote_sum'] = ($vote_sum) ? $vote_sum : 0;
 }
