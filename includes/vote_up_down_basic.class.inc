@@ -33,6 +33,13 @@ abstract class voteUpDownBase implements voteUpDownInterface {
   /**
    * @{@inheritdoc}
    */
+  public function validate($entity_type, $entity_id, $value, $account = NULL) {
+    return TRUE;
+  }
+
+  /**
+   * @{@inheritdoc}
+   */
   public function view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
     $elements = array();
     $wrapper = entity_metadata_wrapper($entity_type, $entity);
