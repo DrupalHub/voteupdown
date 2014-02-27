@@ -309,15 +309,20 @@ function vote_up_down_field_prepare_view($entity_type, $entities, $field, $insta
 /**
  * Function for the main voting handler with Ajax support.
  */
-function vote_up_down_vote($type, $entity_id, $value, $tag, $widget, $token, $ajax = 'ajax') {
+function vote_up_down_vote($entity_type, $entity_id, $value, $tag, $widget, $token, $ajax = 'ajax') {
   // If the user is anonymous we don't need to check for a token.
-  if (!is_numeric($value) || !drupal_valid_token($token, "vote/$type/$entity_id/$value/$tag/$widget", TRUE)) {
+  if (!is_numeric($value) || !drupal_valid_token($token, "vote/$entity_type/$entity_id/$value/$tag/$widget", TRUE)) {
     return MENU_ACCESS_DENIED;
   }
 
+  global $user;
+  $account = clone $user;
+  $tag = $tag ? $tag : variable_get('vote_up_down_tag', 'vote');
+  $plugin = vote_up_down_load_widget($widget);
+
   $vote = array();
   $casted_vote_criteria = array(
-    'entity_type' => $type,
+    'entity_type' => $entity_type,
     'entity_id' => $entity_id,
     'tag' => $tag,
   ) + votingapi_current_user_identifier();
@@ -333,7 +338,7 @@ function vote_up_down_vote($type, $entity_id, $value, $tag, $widget, $token, $aj
   else {
     // Invalid value.
     $params = array(
-      '@type' => $type,
+      '@type' => $entity_type,
       '@content_id' => $entity_id,
       '@value' => $value,
       '@tag' => $tag,
@@ -343,12 +348,14 @@ function vote_up_down_vote($type, $entity_id, $value, $tag, $widget, $token, $aj
     return;
   }
 
+  // The validate above has passed but let's allow the plugin handler join in.
+  $plugin->validate($entity_type, $entity_id, $value, $account);
+
   $vote['value'] = $value;
   $vote['value_type'] = 'points';
-  $tag = $tag ? $tag : variable_get('vote_up_down_tag', 'vote');
   $vote['tag'] = $tag;
   $vote['entity_id'] = $entity_id;
-  $vote['entity_type'] = $type;
+  $vote['entity_type'] = $entity_type;
   $votes = array(0 => $vote);
   drupal_alter('vote_up_down_votes', $votes);
 
@@ -364,14 +371,13 @@ function vote_up_down_vote($type, $entity_id, $value, $tag, $widget, $token, $aj
     drupal_goto($_SERVER['HTTP_REFERER']);
   }
 
-  $plugin = vote_up_down_load_widget($widget);
   $commands = array();
 
   $theme = theme('vote_up_down_' . $plugin->settings['name'], array(
     'entity_id' => $entity_id,
-    'entity_type' => $type,
+    'entity_type' => $entity_type,
   ));
-  $commands[] = ajax_command_replace("#widget-$type-$entity_id", $theme);
+  $commands[] = ajax_command_replace("#widget-$entity_type-$entity_id", $theme);
 
   // todo: Do we need this?
 //  if (!empty($plugin['votes template'])) {
@@ -380,4 +386,21 @@ function vote_up_down_vote($type, $entity_id, $value, $tag, $widget, $token, $aj
 
   print ajax_render($commands);
   exit;
+}
+
+/**
+ * Implements hook_entity_load().
+ *
+ * Prepopulating the vote up down field with the information from the votingAPI
+ * table.
+ */
+function vote_up_down_entity_load($entities, $type) {
+  // Check if the entity has the vote up down field attached.
+  if ($statement) {
+    // ACT.
+  }
+
+  // Load all the vote from the DB.
+
+  // Populate the field.
 }

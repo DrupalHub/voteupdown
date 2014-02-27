@@ -15,8 +15,20 @@ interface voteUpDownInterface {
 
   /**
    * Validating the value before saving the data to the DB.
+   *
+   * @param $entity_type
+   *  The entity type we set the vote for.
+   * @param $entity_id
+   *  The entity object.
+   * @param $value
+   *  The value of the point.
+   * @param $account
+   *  The user object.
+   *
+   * @throws Exception
+   *  When the validate failed throws an error.
    */
-  public function validate();
+  public function validate($entity_type, $entity_id, $value, $account = NULL);
 
   /**
    * Displaying the values of the form.
