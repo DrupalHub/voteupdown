@@ -50,7 +50,7 @@ abstract class voteUpDownBase implements voteUpDownInterface {
     $elements[0] = array(
       '#markup' => theme('vote_up_down_' . $this->settings['name'], array(
         'entity_id' => $wrapper->getIdentifier(),
-        'entity_type' => $wrapper->getBundle(),
+        'entity_type' => $wrapper->type(),
       )),
     );
 

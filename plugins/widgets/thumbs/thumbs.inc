@@ -37,4 +37,14 @@ class voteUpDownThumbs extends voteUpDownBase {
 
     return $form;
   }
+
+  /**
+   * @{@inheritdoc}
+   */
+  public function preprocess(&$variables) {
+    parent::preprocess($variables);
+
+    // todo: load the field instance settings and check if we need to allow
+    // only up/down or both.
+  }
 }

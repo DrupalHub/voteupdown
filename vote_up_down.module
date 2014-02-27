@@ -88,8 +88,7 @@ function vote_up_down_field_info() {
  * Implements hook_field_widget_info().
  */
 function vote_up_down_field_widget_info() {
-  ctools_include('plugins');
-  $widgets = ctools_get_plugins('vote_up_down', 'widgets');
+  $widgets = VoteUpDown::getWidgets();
 
   foreach ($widgets as $widget => $info) {
     $widgets[$widget] = array(
@@ -121,8 +120,7 @@ function vote_up_down_field_formatter_info() {
  * Declaring themes for plugins.
  */
 function vote_up_down_theme() {
-  ctools_include('plugins');
-  $widgets = ctools_get_plugins('vote_up_down', 'widgets');
+  $widgets = VoteUpDown::getWidgets();
 
   $theme = array();
 
@@ -389,12 +387,27 @@ function vote_up_down_vote($entity_type, $entity_id, $value, $tag, $widget, $tok
 }
 
 /**
+ * Implements hook_votingapi_insert().
+ *
+ * When a new vote is created set the voting ID in the field of the entity.
+ */
+function vote_up_down_votingapi_insert($votes) {
+  foreach ($votes as $vote) {
+    // todo: Add a new entry to the field with the new voting ID.
+    $vote['vote_id'];
+    $vote['entity_id'];
+    $vote['entity_type'];
+  }
+}
+
+/**
  * Implements hook_entity_load().
  *
  * Prepopulating the vote up down field with the information from the votingAPI
  * table.
  */
 function vote_up_down_entity_load($entities, $type) {
+
   // Check if the entity has the vote up down field attached.
   if ($statement) {
     // ACT.
