@@ -57,7 +57,48 @@ function vote_up_down_field_formatter_info() {
  * Declaring themes for plugins.
  */
 function vote_up_down_theme() {
-  return array();
+  ctools_include('plugins');
+  $widgets = ctools_get_plugins('vote_up_down', 'widgets');
+
+  $theme = array();
+  foreach ($widgets as $widget => $info) {
+    $theme['vote_up_down_' . $widget] = array(
+      'template' => 'widget',
+      'path' => $info['path'],
+      'preprocess functions' => array('vote_up_down_widget_preprocess'),
+      'variables' => array(
+        'widget' => $widget,
+        'entity_id' => NULL,
+        'entity_type' => NULL,
+      ),
+    );
+  }
+
+  return $theme;
+}
+
+/**
+ * Pre process function callback.
+ */
+function vote_up_down_widget_preprocess(&$variables) {
+  $widget = vote_up_down_load_widget($variables['widget']);
+
+  // Get all the assets.
+  $css = $widget->settings['assets']['css'];
+  $js = $widget->settings['assets']['js'];
+
+  // Load tje CSS.
+  foreach ($css as $asset) {
+    drupal_add_css($widget->settings['path'] . '/' . $asset);
+  }
+
+  // Loading JS.
+  foreach ($js as $asset) {
+    drupal_add_js($widget->settings['path'] . '/' . $asset);
+  }
+
+  // Invoking the pre process of the widget.
+  $widget->preprocess($variables);
 }
 
 /**
@@ -96,7 +137,7 @@ function vote_up_down_ctools_plugin_directory($owner, $plugin_type) {
  *  The name of the widget.
  *
  * @throws Exception
- * @return voteUpDownInterface
+ * @return voteUpDownBase
  */
 function vote_up_down_load_widget($widget) {
   $object_cache = drupal_static(__FUNCTION__);

@@ -13,16 +13,9 @@ $plugin = array(
     'js' => array('thumbs.js'),
     'css' => array('thumbs.css'),
   ),
-  'theme' => 'vote_up_down_thumbs',
 );
 
-class voteUpDownThumbs implements voteUpDownInterface {
-
-  public $settings;
-
-  function __construct(array $settings = array()) {
-    $this->settings = $settings;
-  }
+class voteUpDownThumbs extends voteUpDownBase {
 
   /**
    * @{@inheritdoc}
@@ -43,37 +36,5 @@ class voteUpDownThumbs implements voteUpDownInterface {
     );
 
     return $form;
-  }
-
-  /**
-   * Validating the value before saving the data to the DB.
-   */
-  public function validate() {
-
-  }
-
-  /**
-   * Displaying the values of the form.
-   */
-  public function view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
-    $elements = array();
-
-    $foo = theme('melingo_dictionary_term_translate_word');
-    dpm($foo);
-
-    foreach ($items as $delta => $item) {
-      $elements[$delta] = array(
-        '#markup' => 'a',
-      );
-    }
-
-    return $elements;
-  }
-
-  /**
-   * When editing the field through the UI.
-   */
-  public function widget(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
-    // todo: Handle this later.
   }
 }

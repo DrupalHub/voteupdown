@@ -27,4 +27,12 @@ interface voteUpDownInterface {
    * When editing the field through the UI.
    */
   public function widget(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element);
+
+  /**
+   * Allow each plugin handler to alter the variables of the theme function.
+   *
+   * @param $variables
+   *  The variables of the theme function.
+   */
+  public function preprocess(&$variables);
 }
