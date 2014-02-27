@@ -191,6 +191,7 @@ abstract class voteUpDownBase implements voteUpDownInterface {
       }
 
       // TODO: Get default $widget_message_code or one from $variables.
+      // Traces of 7.x-1.x branch, don't blame me.
       $widget_message_code = VUD_WIDGET_MESSAGE_DENIED;
 
       $variables['link_up'] = url(sprintf('vud/nojs/denied/%d', $widget_message_code));
