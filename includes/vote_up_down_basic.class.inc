@@ -68,8 +68,9 @@ abstract class voteUpDownBase implements voteUpDownInterface {
    * @{@inheritdoc}
    */
   public function preprocess(&$variables) {
+    // Default value of the variables.
     $variables += array(
-      'widget_message_code' => 0,
+      'widget_message_code' => VUD_WIDGET_MESSAGE_ERROR,
       'readonly' => FALSE,
       'tag' => variable_get('vud_tag', 'vote'),
       'id' => 'widget-' . $variables['entity_type'] . '-' . $variables['entity_id'],
@@ -89,33 +90,37 @@ abstract class voteUpDownBase implements voteUpDownInterface {
       'reset_short_text' => t('(reset)'),
     );
 
+    // Get default value of the variables.
+    $entity_type = $variables['entity_type'];
+    $entity_id = $variables['entity_id'];
+    $tag = $variables['tag'];
+    $readonly = $variables['readonly'];
+    $widget_theme = 'vote_up_down_' . $this->settings['name'];
+
+    // Adding libraries.
     drupal_add_library('system', 'drupal.ajax');
     ctools_add_js('ajax-responder');
     ctools_include('ajax');
 
-
-    // for now.
-    return;
-
     // Define access per operation, for example when the vote up operation is
-    // active this means the down operation should be allowed, as the up vote was
-    // already.
+    // active this means the down operation should be allowed, as the up vote
+    // was already.
     $up_access = $down_access = $reset_access = FALSE;
+
     if (user_access('use vote up/down')) {
       $criteria = array(
-          'entity_type' => $type,
-          'entity_id' => $entity_id,
-          'tag' => $variables['tag'],
-        ) + votingapi_current_user_identifier();
-      $previous_vote = votingapi_select_single_vote_value($criteria);
+        'entity_type' => $entity_type,
+        'entity_id' => $entity_id,
+        'tag' => $variables['tag'],
+      ) + votingapi_current_user_identifier();
 
+      $previous_vote = votingapi_select_single_vote_value($criteria);
       $user_vote = isset($previous_vote) ? $previous_vote : 0;
 
       if (!$readonly) {
-
         $up_access = $user_vote <= 0;
         $down_access = $user_vote >= 0;
-        $reset_access = ($user_vote != 0) && vud_access_callback('reset vote up/down votes', $type, $entity_id, NULL, $tag);
+        $reset_access = ($user_vote != 0) && vote_up_down_access_callback('reset vote up/down votes', $entity_type, $entity_id, NULL, $tag);
 
         if (!$up_access && !$down_access) {
           // Although implementing modules have requested a not readonly widget,
@@ -125,48 +130,56 @@ abstract class voteUpDownBase implements voteUpDownInterface {
       }
     }
 
-    // Prepare links only if it's not readonly, or if readonly but we need to show
-    // a messgae on deny.
+    // Prepare links only if it's not readonly, or if readonly but we need to
+    // show a message on deny.
     $message_on_deny = variable_get('vud_message_on_deny', FALSE);
+
     if (!$readonly || ($readonly && $message_on_deny)) {
-      // Widget needs to show links.
+      // Links should be displayed.
       if ($up_access) {
         $variables['class_up'] = 'up-inactive';
         $variables['show_up_as_link'] = TRUE;
       }
+
       if ($down_access) {
         $variables['class_down'] = 'down-inactive';
         $variables['show_down_as_link'] = TRUE;
       }
+
       if ($reset_access) {
         $variables['show_reset'] = TRUE;
         $variables['class_reset'] = 'reset-active';
       }
+
       $variables['show_links'] = TRUE;
     }
 
     if (!$readonly) {
-      // Widget has link(s).
+      // This is not a read only mode. Allow the user to vote.
       if ($up_access) {
-        $token_up = drupal_get_token("vote/$type/$entity_id/1/$tag/$widget_theme");
-        $variables['link_up'] = url("vote/$type/$entity_id/1/$tag/$widget_theme/$token_up/nojs");
+        $token_up = drupal_get_token("vote/$entity_type/$entity_id/1/$tag/$widget_theme");
+        $variables['link_up'] = url("vote/$entity_type/$entity_id/1/$tag/$widget_theme/$token_up/nojs");
         $variables['link_class_up'] .= ' use-ajax';
       }
+
       if ($down_access) {
-        $token_down = drupal_get_token("vote/$type/$entity_id/-1/$tag/$widget_theme");
-        $variables['link_down'] = url("vote/$type/$entity_id/-1/$tag/$widget_theme/$token_down/nojs");
+        $token_down = drupal_get_token("vote/$entity_type/$entity_id/-1/$tag/$widget_theme");
+        $variables['link_down'] = url("vote/$entity_type/$entity_id/-1/$tag/$widget_theme/$token_down/nojs");
         $variables['link_class_down'] .= ' use-ajax';
       }
+
       if ($reset_access) {
-        $token_reset = drupal_get_token("votereset/$type/$entity_id/$tag/$widget_theme");
-        $variables['link_reset'] = url("votereset/$type/$entity_id/$tag/$widget_theme/$token_reset");
+        $token_reset = drupal_get_token("votereset/$entity_type/$entity_id/$tag/$widget_theme");
+        $variables['link_reset'] = url("votereset/$entity_type/$entity_id/$tag/$widget_theme/$token_reset");
         $variables['link_class_reset'] .= ' use-ajax';
       }
     }
     elseif ($readonly && $message_on_deny) {
-      // Readonly widget, but with a deny messgae.
+      // Readonly widget, but with a deny message.
+
       ctools_include('modal');
       ctools_modal_add_js();
+
       if ($up_access) {
         $variables['link_class_up'] .= ' denied ctools-use-modal';
       }
@@ -179,6 +192,7 @@ abstract class voteUpDownBase implements voteUpDownInterface {
 
       // TODO: Get default $widget_message_code or one from $variables.
       $widget_message_code = VUD_WIDGET_MESSAGE_DENIED;
+
       $variables['link_up'] = url(sprintf('vud/nojs/denied/%d', $widget_message_code));
       $variables['link_down'] = url(sprintf('vud/nojs/denied/%d', $widget_message_code));
       $variables['link_reset'] = url(sprintf('vud/nojs/denied/%d', $widget_message_code));
@@ -191,22 +205,23 @@ abstract class voteUpDownBase implements voteUpDownInterface {
     }
 
     $result_criteria = array(
-      'entity_type' => $type,
+      'entity_type' => $entity_type,
       'entity_id' => $entity_id,
       'value_type' => 'points',
       'tag' => $tag,
-      'function' => 'sum'
+      'function' => 'sum',
     );
+
     $raw_points = votingapi_select_single_result_value($result_criteria);
     $variables['raw_points'] = $raw_points;
     $vote_result = (int)$raw_points;
 
     $criteria = array(
-      'entity_type' => $type,
+      'entity_type' => $entity_type,
       'entity_id' => $entity_id,
       'value_type' => 'points',
       'tag' => $tag,
-      'function' => 'count'
+      'function' => 'count',
     );
     $vote_count = (int)votingapi_select_single_result_value($criteria);
     $variables['vote_count'] = $vote_count;
@@ -226,6 +241,9 @@ abstract class voteUpDownBase implements voteUpDownInterface {
         $variables['class'] = 'neutral';
       }
     }
+
     $variables['vote_label'] = format_plural(abs($vote_result), 'vote', 'votes');
+    $vote_sum = votingapi_select_single_result_value($criteria);
+    $variables['vote_sum'] = ($vote_sum) ? $vote_sum : 0;
   }
 }

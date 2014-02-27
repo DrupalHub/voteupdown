@@ -4,6 +4,11 @@
  * vote_up_down.module
  */
 
+define('VUD_WIDGET_MESSAGE_ERROR', 0);
+define('VUD_WIDGET_MESSAGE_DENIED', 1);
+
+define('VUD_REQUIRED_CTOOLS_API', '2.0-alpha');
+
 /**
  * Implements hook_field_info().
  */
@@ -61,11 +66,13 @@ function vote_up_down_theme() {
   $widgets = ctools_get_plugins('vote_up_down', 'widgets');
 
   $theme = array();
+
   foreach ($widgets as $widget => $info) {
     $theme['vote_up_down_' . $widget] = array(
       'template' => 'widget',
       'path' => $info['path'],
       'preprocess functions' => array('vote_up_down_widget_preprocess'),
+
       'variables' => array(
         'widget' => $widget,
         'entity_id' => NULL,
@@ -75,6 +82,75 @@ function vote_up_down_theme() {
   }
 
   return $theme;
+}
+
+/**
+ * Implementation of hook_permission().
+ */
+function vud_permission() {
+  return array(
+    'use vote up/down' => array(
+      'title' => t('Use Vote Up/Down'),
+      'description' => t('Grant users the ability to cast votes'),
+    ),
+    'administer vote up/down' => array(
+      'title' => t('Administer Vote Up/Down'),
+      'description' => t('Adjust the settings of the Vote Up/Down module'),
+    ),
+    'access vote up/down statistics' => array(
+      'title' => t('Access Vote Up/Down Statistics'),
+      'description' => t('Permission to see who is voting on what'),
+    ),
+    'reset vote up/down votes' => array(
+      'title' => t('Reset Votes'),
+      'description' => t('Reset all of the Up/Down votes on the site'),
+    ),
+  );
+}
+
+/**
+ * Access callback for votes.
+ *
+ * @param $permission
+ *  A string containing the permission required to modify the vote.
+ * @param $entity_type
+ *  A string containing the type of content being voted on.
+ * @param $entity_id
+ *  An integer containing the unique ID of the content being voted on.
+ * @param $value
+ *  An integer containing the vote value, 1 for an up vote, -1 for a down vote.
+ * @param $tag
+ *  A string containing the voting API tag.
+ * @param $account
+ *  An object containing the user voting on the content, NULL for the current
+ *  user.
+ *
+ * @return bool
+ *  Boolean flagging whether or not the user has access to the vote.
+ */
+function vote_up_down_access_callback($permission, $entity_type, $entity_id, $value, $tag, $account = NULL) {
+  if ($account === NULL) {
+    global $user;
+    $account = $user;
+  }
+
+  // Verify the user has the proper permission.
+  if (user_access($permission, $account) !== TRUE) {
+    return FALSE;
+  }
+
+  // Although the user holds the proper permission we should allow other module
+  // to interrupt during the access function.
+  $access_array = module_invoke_all('vud_access', $permission, $entity_type, $entity_id, $value, $tag, $account);
+
+  foreach ($access_array as $access_result) {
+    if ($access_result !== TRUE) {
+      // One of the module didn't allow this action.
+      return FALSE;
+    }
+  }
+
+  return TRUE;
 }
 
 /**
