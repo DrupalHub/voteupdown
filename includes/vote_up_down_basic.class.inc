@@ -41,11 +41,10 @@ abstract class voteUpDownBase implements voteUpDownInterface {
    */
   public function view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
     $elements = array();
+    $wrapper = entity_metadata_wrapper($entity_type, $entity);
 
     foreach ($items as $delta => $item) {
     }
-
-    $wrapper = entity_metadata_wrapper($entity_type, $entity);
 
     $elements[0] = array(
       '#markup' => theme('vote_up_down_' . $this->settings['name'], array(
@@ -70,7 +69,7 @@ abstract class voteUpDownBase implements voteUpDownInterface {
   public function preprocess(&$variables) {
     // Default value of the variables.
     $variables += array(
-      'widget_message_code' => VUD_WIDGET_MESSAGE_ERROR,
+      'widget_message_code' => VOTE_UP_DOWN_WIDGET_MESSAGE_DENIED,
       'readonly' => FALSE,
       'tag' => variable_get('vud_tag', 'vote'),
       'id' => 'widget-' . $variables['entity_type'] . '-' . $variables['entity_id'],
@@ -95,7 +94,7 @@ abstract class voteUpDownBase implements voteUpDownInterface {
     $entity_id = $variables['entity_id'];
     $tag = $variables['tag'];
     $readonly = $variables['readonly'];
-    $widget_theme = 'vote_up_down_' . $this->settings['name'];
+    $widget_theme = $this->settings['name'];
 
     // Adding libraries.
     drupal_add_library('system', 'drupal.ajax');
@@ -176,7 +175,6 @@ abstract class voteUpDownBase implements voteUpDownInterface {
     }
     elseif ($readonly && $message_on_deny) {
       // Readonly widget, but with a deny message.
-
       ctools_include('modal');
       ctools_modal_add_js();
 
@@ -192,7 +190,7 @@ abstract class voteUpDownBase implements voteUpDownInterface {
 
       // TODO: Get default $widget_message_code or one from $variables.
       // Traces of 7.x-1.x branch, don't blame me.
-      $widget_message_code = VUD_WIDGET_MESSAGE_DENIED;
+      $widget_message_code = VOTE_UP_DOWN_WIDGET_MESSAGE_DENIED;
 
       $variables['link_up'] = url(sprintf('vud/nojs/denied/%d', $widget_message_code));
       $variables['link_down'] = url(sprintf('vud/nojs/denied/%d', $widget_message_code));
@@ -224,17 +222,19 @@ abstract class voteUpDownBase implements voteUpDownInterface {
       'tag' => $tag,
       'function' => 'count',
     );
-    $vote_count = (int)votingapi_select_single_result_value($criteria);
-    $variables['vote_count'] = $vote_count;
 
+    $vote_count = (int)votingapi_select_single_result_value($criteria);
+
+    $variables['vote_count'] = $vote_count;
     $variables['unsigned_points'] = $vote_result;
 
     if ($vote_result > 0) {
       $variables['class'] = 'positive';
-      $variables['points'] = '+'. $vote_result;
+      $variables['points'] = '+' . $vote_result;
     }
     else {
       $variables['points'] = $vote_result;
+
       if ($vote_result < 0) {
         $variables['class'] = 'negative';
       }
