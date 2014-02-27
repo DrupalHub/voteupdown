@@ -244,7 +244,6 @@ abstract class voteUpDownBase implements voteUpDownInterface {
     }
 
     $variables['vote_label'] = format_plural(abs($vote_result), 'vote', 'votes');
-    $vote_sum = votingapi_select_single_result_value($criteria);
-    $variables['vote_sum'] = ($vote_sum) ? $vote_sum : 0;
+    $variables['vote_sum'] = ($vote_result) ? $vote_result : 0;
   }
 }
