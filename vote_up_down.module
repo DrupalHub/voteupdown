@@ -9,6 +9,10 @@ define('VOTE_UP_DOWN_WIDGET_MESSAGE_DENIED', 1);
 
 define('vote_up_down_REQUIRED_CTOOLS_API', '2.0-alpha');
 
+require_once 'includes/vote_up_down.class.inc';
+require_once 'includes/voteUpDown.php';
+require_once 'includes/vote_up_down_basic.class.inc';
+
 /**
  * Implements hook_menu().
  */
@@ -130,7 +134,7 @@ function vote_up_down_property_callback(&$info, $entity_type, $field, $instance,
  * Getter callback;
  */
 function vote_up_down_getter_callback($entity, array $options, $name, $entity_type, &$context) {
-//  return new VoteUpDown($entity_type, $entity);
+  return new VoteUpDown($entity_type, $entity);
 }
 
 /**
@@ -465,13 +469,28 @@ function vote_up_down_vote($entity_type, $entity_id, $value, $tag, $widget, $tok
  */
 function vote_up_down_votingapi_insert($votes) {
   foreach ($votes as $vote) {
-    // todo: Add a new entry to the field with the new voting ID.
-    $vote['vote_id'];
-    $vote['entity_id'];
-    $vote['entity_type'];
-
     $wrapper = entity_metadata_wrapper($vote['entity_type'], $vote['entity_id']);
 
+    // Get the field name.
+    $field_name = VoteUpDown::findField($vote['entity_type'], $vote['entity_id']);
+
+    // Get the field settings to get the cardinality of the field.
+    $instance = field_info_instance($wrapper->type(), $field_name, $wrapper->getBundle());
+    $field_info = field_info_field($instance['field_name']);
+
+    // Check the field cardinality and set the value as well.
+    if ($field_info['cardinality'] == 1) {
+      $value = $vote['vote_id'];
+    }
+    else {
+      $values = array_keys($wrapper->{$field_name}->value()->getVotes());
+      $values[] = $vote['vote_id'];
+        dpm($values);
+      $value = array_unique($values);
+    }
+
+    $wrapper->{$field_name}->set($value);
+    $wrapper->save();
   }
 }
 

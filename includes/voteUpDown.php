@@ -44,33 +44,6 @@ class VoteUpDown {
   }
 
   /**
-   * Get all the votes for a specific entity.
-   *
-   * @param $entity_type
-   *  The entity type.
-   * @param $entity
-   *  The entity object.
-   */
-  public static function getResults($entity_type, $entity) {
-    list($id) = entity_extract_ids($entity_type, $entity);
-
-    return db_select('votingapi_vote')
-      ->fields('votingapi_vote')
-      ->condition('entity_id', $id)
-      ->condition('entity_type', $entity_type)
-      ->execute()
-      ->fetchAllAssoc('vote_id');
-  }
-
-  /**
-   * Get widgets.
-   */
-  public static function getWidgets() {
-    ctools_include('plugins');
-    return ctools_get_plugins('vote_up_down', 'widgets');
-  }
-
-  /**
    * Get the votes.
    */
   public function getVotes() {
@@ -149,5 +122,53 @@ class VoteUpDown {
    */
   private function missingVote() {
     throw new Exception(t("A vote ID is missing."));
+  }
+
+  /**
+   * Get all the votes for a specific entity.
+   *
+   * @param $entity_type
+   *  The entity type.
+   * @param $entity
+   *  The entity object.
+   */
+  public static function getResults($entity_type, $entity) {
+    list($id) = entity_extract_ids($entity_type, $entity);
+
+    return db_select('votingapi_vote')
+      ->fields('votingapi_vote')
+      ->condition('entity_id', $id)
+      ->condition('entity_type', $entity_type)
+      ->execute()
+      ->fetchAllAssoc('vote_id');
+  }
+
+  /**
+   * Get widgets.
+   */
+  public static function getWidgets() {
+    ctools_include('plugins');
+    return ctools_get_plugins('vote_up_down', 'widgets');
+  }
+
+  /**
+   * Get the vote for the given entity.
+   *
+   * @param $entity_type
+   *  The entity type.
+   * @param $entity
+   *  The entity object.
+   */
+  public static function findField($entity_type, $entity) {
+    $wrapper = entity_metadata_wrapper($entity_type, $entity);
+    $instances = field_info_instances($wrapper->type(), $wrapper->getBundle());
+
+    foreach ($instances as $instance) {
+      $field = field_info_field($instance['field_name']);
+
+      if ($field['type'] == 'vote_up_down') {
+        return $instance['field_name'];
+      }
+    }
   }
 }
