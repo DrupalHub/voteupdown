@@ -4,11 +4,14 @@
  * vote_up_down.module
  */
 
+/**
+ * Defines. Traces of the 7.x-1.x branch.
+ */
 define('VOTE_UP_DOWN_WIDGET_MESSAGE_ERROR', 0);
 define('VOTE_UP_DOWN_WIDGET_MESSAGE_DENIED', 1);
-
 define('vote_up_down_REQUIRED_CTOOLS_API', '2.0-alpha');
 
+// Require files.
 require_once 'includes/vote_up_down.class.inc';
 require_once 'includes/voteUpDown.php';
 require_once 'includes/vote_up_down_basic.class.inc';
@@ -485,29 +488,10 @@ function vote_up_down_votingapi_insert($votes) {
     else {
       $values = array_keys($wrapper->{$field_name}->value()->getVotes());
       $values[] = $vote['vote_id'];
-        dpm($values);
       $value = array_unique($values);
     }
 
     $wrapper->{$field_name}->set($value);
     $wrapper->save();
   }
-}
-
-/**
- * Implements hook_entity_load().
- *
- * Prepopulating the vote up down field with the information from the votingAPI
- * table.
- */
-function vote_up_down_entity_load($entities, $type) {
-//
-//  // Check if the entity has the vote up down field attached.
-//  if ($statement) {
-//    // ACT.
-//  }
-//
-//  // Load all the vote from the DB.
-//
-//  // Populate the field.
 }

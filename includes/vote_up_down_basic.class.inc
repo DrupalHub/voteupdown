@@ -44,9 +44,6 @@ abstract class voteUpDownBase implements voteUpDownInterface {
     $elements = array();
     $wrapper = entity_metadata_wrapper($entity_type, $entity);
 
-    foreach ($items as $delta => $item) {
-    }
-
     $elements[0] = array(
       '#markup' => theme('vote_up_down_' . $this->settings['name'], array(
         'entity_id' => $wrapper->getIdentifier(),

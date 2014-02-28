@@ -6,8 +6,3 @@ core = 7.x
 dependencies[] = ctools
 dependencies[] = entity
 dependencies[] = votingapi
-
-; Files
-files[] = includes/voteUpDown.php
-files[] = includes/vote_up_down.class.inc
-files[] = includes/vote_up_down_basic.class.inc
