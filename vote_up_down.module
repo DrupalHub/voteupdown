@@ -79,6 +79,7 @@ function vote_up_down_field_info() {
     'instance_settings' => array(),
     'default_widget' => 'updown',
     'default_formatter' => 'updown',
+    'property_callbacks' => array('vote_up_down_property_callback'),
   );
 
   return $field_info;
@@ -112,6 +113,76 @@ function vote_up_down_field_formatter_info() {
       'field types' => array('vote_up_down'),
     ),
   );
+}
+
+/**
+ * Property callback; Define setter and callback function.
+ */
+function vote_up_down_property_callback(&$info, $entity_type, $field, $instance, $field_type) {
+  $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$field['field_name']];
+  $property['getter callback'] = 'vote_up_down_getter_callback';
+  $property['setter callback'] = 'vote_up_down_setter_callback';
+  $property['validation callback'] = 'vote_up_down_validation_callback';
+  $property['type'] = 'unknown';
+}
+
+/**
+ * Getter callback;
+ */
+function vote_up_down_getter_callback($entity, array $options, $name, $entity_type, &$context) {
+}
+
+/**
+ * Setter callback;
+ */
+function vote_up_down_setter_callback($entity, $name, $items, $langcode, $entity_type) {
+  $field_info = field_info_field($name);
+
+  if ($field_info['cardinality'] == 1) {
+    if (is_array($items)) {
+      throw new Exception(t('Multiple votes has injected to the vote up down field when the field support a single vote.'));
+    }
+
+    // Set up the single as an array. This will allow to use a foreach even for
+    // a single value.
+    $items = array($items);
+  }
+
+  // Load all the votes for the entity and verify the vote ID exists for this
+  // entity.
+  $votes = VoteUpDown::getResults($entity_type, $entity);
+
+  if ($extras = array_diff($items, array_keys($votes))) {
+    $params = array(
+      '@ids' => implode(', ', $extras),
+      '@id' => reset($extras),
+    );
+
+    if (count($extras) == 1) {
+      $text = 'The vote id @id is not belong to the entity';
+    }
+    else {
+      $text = 'The votes IDs you entered are belong to this entity: @ids.';
+    }
+
+    throw new Exception(t($text, $params));
+  }
+
+  // Loop over the items and relate it to the key.
+  $data = array();
+  foreach ($items as $item) {
+    $data[]['voteid'] = $item;
+  }
+
+  $entity->{$name}[$langcode] = $data;
+}
+
+/**
+ * Validation callback; The validation will be done in the setter callback when
+ * more context is available: cardinality of the field, voting ID etc. etc.
+ */
+function vote_up_down_validation_callback() {
+  return TRUE;
 }
 
 /**
@@ -407,13 +478,13 @@ function vote_up_down_votingapi_insert($votes) {
  * table.
  */
 function vote_up_down_entity_load($entities, $type) {
-
-  // Check if the entity has the vote up down field attached.
-  if ($statement) {
-    // ACT.
-  }
-
-  // Load all the vote from the DB.
-
-  // Populate the field.
+//
+//  // Check if the entity has the vote up down field attached.
+//  if ($statement) {
+//    // ACT.
+//  }
+//
+//  // Load all the vote from the DB.
+//
+//  // Populate the field.
 }

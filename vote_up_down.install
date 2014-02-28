@@ -9,23 +9,22 @@
  */
 function vote_up_down_field_schema($field) {
   if ($field['type'] == 'vote_up_down') {
-    $columns = array(
-      'value' => array(
-        'type' => 'int',
-        'length' => 12,
-        'not null' => FALSE,
-      ),
-      'user' => array(
-        'type' => 'int',
-        'length' => 12,
-        'not null' => FALSE,
-      ),
-    );
-
     return array(
-      'columns' => $columns,
+      'columns' => array(
+        'voteid' => array(
+          'type' => 'int',
+          'length' => 12,
+          'not null' => FALSE,
+        )
+      ),
       'indexes' => array(
-        'format' => array('value'),
+        'format' => array('voteid'),
+      ),
+      'foreign keys' => array(
+        'votingapi_vote' => array(
+          'table' => 'votingapi_vote',
+          'columns' => array('voteid' => 'voteid'),
+        ),
       ),
     );
   }
