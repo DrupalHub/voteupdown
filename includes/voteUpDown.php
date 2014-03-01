@@ -141,6 +141,25 @@ class VoteUpDown {
   }
 
   /**
+   * Get the base DB query object.
+   *
+   * @param $entity_type
+   *  The entity type.
+   * @param $entity
+   *  The entity object.
+   *
+   * @return SelectQuery
+   */
+  private static function baseQuery($entity_type, $entity) {
+    list($id) = entity_extract_ids($entity_type, $entity);
+
+    return db_select('votingapi_vote')
+      ->fields('votingapi_vote')
+      ->condition('entity_id', $id)
+      ->condition('entity_type', $entity_type);
+  }
+
+  /**
    * Get all the votes for a specific entity.
    *
    * @param $entity_type
@@ -149,15 +168,60 @@ class VoteUpDown {
    *  The entity object.
    */
   public static function getResults($entity_type, $entity) {
-    // todo: static cache.
-    list($id) = entity_extract_ids($entity_type, $entity);
-
-    return db_select('votingapi_vote')
-      ->fields('votingapi_vote')
-      ->condition('entity_id', $id)
-      ->condition('entity_type', $entity_type)
+    return self::baseQuery($entity_type, $entity)
       ->execute()
       ->fetchAllAssoc('vote_id');
+  }
+
+  /**
+   * Get votes by the user ID for a specific entity.
+   *
+   * @param $entity_type
+   *  The entity type.
+   * @param $entity
+   *  The entity object.
+   * @param $uid
+   *  The user ID.
+   *
+   * @return
+   *  The user votes for this entity.
+   */
+  public static function getVotesForUser($entity_type, $entity, $uid) {
+    $base_query = self::baseQuery($entity_type, $entity);
+
+    return $base_query
+      ->condition('uid', $uid)
+      ->execute()
+      ->fetchAllAssoc('vote_id');
+  }
+
+  /**
+   * Setting vote for user upon an entity.
+   *
+   * @param $entity_type
+   *  The entity type.
+   * @param $entity
+   *  The entity object.
+   * @param $value
+   *  The value of the vote.
+   * @param $uid
+   *  The user ID.
+   *
+   * @return
+   *  Information about the new vote.
+   */
+  public static function setVote($entity_type, $entity, $value, $uid) {
+    $wrapper = entity_metadata_wrapper($entity_type, $entity);
+
+    $votes = array(array(
+      'entity_type' => $wrapper->type(),
+      'entity_id' => $wrapper->getIdentifier(),
+      'value' => $value,
+      'uid' => $uid,
+    ));
+    votingapi_set_votes($votes);
+
+    return $votes[0];
   }
 
   /**

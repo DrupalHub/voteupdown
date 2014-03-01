@@ -515,26 +515,26 @@ function vote_up_down_field_is_empty($item, $field) {
  */
 function vote_up_down_widget_validate(&$element, &$form_state, $form) {
   if ($element['#vote'] === 0) {
-    if ($element['user']['#value'] && $element['value']['#value']) {
+    if (!$element['user']['#value'] xor !$element['value']['#value']) {
+      form_error($element, t('User name or value is empty.'));
+      return;
+    }
+    else if ($element['user']['#value'] && $element['value']['#value']) {
 
+      // This is new vote, verify the user doesn't exists already.
       if (!$user = user_load_by_name($element['user']['#value'])) {
         form_error($element['user'], t('The user name does not exists.'));
+        return;
       }
 
-      // todo: Create a static method inside VoteUpDown.
-      $wrapper = entity_metadata_wrapper($element['#entity_type'], $element['#entity']);
+      // Verify the user didn't vote before.
+      if (VoteUpDown::getVotesForUser($element['#entity_type'], $element['#entity'], $user->uid)) {
+        form_error($element['user'], t('The user %name already voted for this entity.', array('%name' => $user->name)));
+        return;
+      }
 
-      $votes = array(array(
-        'entity_type' => $wrapper->type(),
-        'entity_id' => $wrapper->getIdentifier(),
-        'value' => $element['value']['#value'],
-        'uid' => $user->uid,
-      ));
-      votingapi_set_votes($votes);
-
-      $vote = (object) $votes[0];
+      $vote = (object) VoteUpDown::setVote($element['#entity_type'], $element['#entity'], $element['value']['#value'], $user->uid);
     }
-    // This is new vote, verify the user doesn't exists already.
   }
   else {
     // Before update, check if there any change in the current vote.
@@ -549,6 +549,7 @@ function vote_up_down_widget_validate(&$element, &$form_state, $form) {
     $vote = $element['#vote']->vote_id;
   }
 
+  // Get the vote ID.
   if (is_object($vote) && !empty($vote->vid)) {
     $vid = $vote->vid;
   }
@@ -558,7 +559,7 @@ function vote_up_down_widget_validate(&$element, &$form_state, $form) {
 
   // When dealing with node and setting the value there is a problem with the
   // time stamp. Notify later on that the node don't need to updated further on.
-  // This will deal in the entity presave.
+  // This will deal in the entity pre save.
   variable_set('vote_up_down_skip_entity_update', TRUE);
 
   // Set the value in the element.
