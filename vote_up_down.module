@@ -503,19 +503,44 @@ function vote_up_down_field_is_empty($item, $field) {
   return !empty($item['voteid']);
 }
 
-function vote_up_down_widget_validate() {
-  dpm(func_get_args());
+/**
+ * Widget validate; Due to the special widget iv'e created for managing the
+ * votes some logic will be needed.
+ */
+function vote_up_down_widget_validate($element, &$form_state, $form) {
+  if ($element['#vote'] === 0) {
+    // This is new vote, verify the user doesn't exists already.
+  }
+  else {
+    // Before update, check if there any change in the current vote.
+    // todo: Get the uid of the user.
 
-  // Get the current vote.
+    $uid = 1;
 
-  // Update he vote/Create a new one for this entity.
+    if ($element['#vote']->uid != $uid || $element['#vote']->value != $element['value']['#value']) {
+      // There was a changed in one of the elements. Updating the vote.
+    }
+  }
 }
 
 /**
  * Implements hook_entity_presave().
+ *
+ * Due to the special widget iv'e created for managing the votes some logic will
+ * be needed.
  */
 function vote_up_down_entity_presave($entity, $type) {
   // Check if this entity has the vote up down field.
+  $field = VoteUpDown::findField($type, $entity);
+
+  if (!$field) {
+    return;
+  }
 
   // Update the fields of the vote with the new votes.
+  $votes = array_keys(VoteUpDown::getResults($type, $entity));
+
+  $wrapper = entity_metadata_wrapper($type, $entity);
+  $wrapper->{$field}->set($votes);
+  $wrapper->save();
 }
