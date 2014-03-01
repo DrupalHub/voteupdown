@@ -8,7 +8,6 @@ $plugin = array(
   'title' => t('Thumbs up and down'),
   'description' => t('Thumbs up and down widget.'),
   'class' => 'voteUpDownThumbs',
-  'alter template variables' => 'vud_widget_thumbs_alter_template_vars',
   'assets' => array(
     'js' => array('thumbs.js'),
     'css' => array('thumbs.css'),

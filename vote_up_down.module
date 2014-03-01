@@ -278,17 +278,21 @@ function vote_up_down_widget_preprocess(&$variables) {
   $widget = vote_up_down_load_widget($variables['widget']);
 
   // Get all the assets.
-  $css = $widget->settings['assets']['css'];
-  $js = $widget->settings['assets']['js'];
+  $css = empty($widget->settings['assets']['css']) ? '' : $widget->settings['assets']['css'];
+  $js = empty($widget->settings['assets']['js']) ? '' : $widget->settings['assets']['js'];
 
   // Load tje CSS.
-  foreach ($css as $asset) {
-    drupal_add_css($widget->settings['path'] . '/' . $asset);
+  if ($css) {
+    foreach ($widget->settings['assets']['css'] as $asset) {
+      drupal_add_css($widget->settings['path'] . '/' . $asset);
+    }
   }
 
   // Loading JS.
-  foreach ($js as $asset) {
-    drupal_add_js($widget->settings['path'] . '/' . $asset);
+  if ($js) {
+    foreach ($widget->settings['assets']['js'] as $asset) {
+      drupal_add_js($widget->settings['path'] . '/' . $asset);
+    }
   }
 
   // Adding variables needed in preprocess functions.

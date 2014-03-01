@@ -85,7 +85,7 @@ abstract class voteUpDownBase implements voteUpDownInterface {
    * @{@inheritdoc}
    */
   public function widget(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
-    if (empty($element['entity_type'])) {
+    if (empty($element['#entity_type'])) {
       return;
     }
 

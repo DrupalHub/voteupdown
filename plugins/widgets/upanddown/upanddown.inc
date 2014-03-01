@@ -11,31 +11,35 @@
 $plugin = array(
   'title' => t('Up and down'),
   'description' => t('Up and down widget.'),
-  'widget template' => 'widget',
-  'alter template variables' => 'vud_widget_upanddown_alter_template_vars',
+  'class' => 'voteUpAndDown',
+  'assets' => array(
+    'css' => array('upanddown.css'),
+  ),
 );
 
-/**
- * Alter template variables.
- */
-function vud_widget_upanddown_alter_template_vars($template_type, &$variables) {
-  $criteria = array(
-    'entity_type' => $variables['type'],
-    'entity_id' => $variables['entity_id'],
-    'value_type' => 'points',
-    'tag' => $variables['tag'],
-    'function' => 'positives'
-  );
-  $positives = (int)votingapi_select_single_result_value($criteria);
-  $variables['up_points'] = $positives;
+class voteUpAndDown extends voteUpDownBase {
 
-  $criteria = array(
-    'entity_type' => $variables['type'],
-    'entity_id' => $variables['entity_id'],
-    'value_type' => 'points',
-    'tag' => $variables['tag'],
-    'function' => 'negatives'
-  );
-  $negatives = (int)votingapi_select_single_result_value($criteria);
-  $variables['down_points'] = $negatives;
+  public function preprocess(&$variables) {
+    parent::preprocess($variables);
+
+    $criteria = array(
+      'entity_type' => $variables['entity_type'],
+      'entity_id' => $variables['entity_id'],
+      'value_type' => 'points',
+      'tag' => $variables['tag'],
+      'function' => 'positives'
+    );
+    $positives = (int)votingapi_select_single_result_value($criteria);
+    $variables['up_points'] = $positives;
+
+    $criteria = array(
+      'entity_type' => $variables['entity_type'],
+      'entity_id' => $variables['entity_id'],
+      'value_type' => 'points',
+      'tag' => $variables['tag'],
+      'function' => 'negatives'
+    );
+    $negatives = (int)votingapi_select_single_result_value($criteria);
+    $variables['down_points'] = $negatives;
+  }
 }
