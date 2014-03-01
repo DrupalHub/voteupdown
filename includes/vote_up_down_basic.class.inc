@@ -58,7 +58,33 @@ abstract class voteUpDownBase implements voteUpDownInterface {
    * @{@inheritdoc}
    */
   public function widget(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
-    // todo: Handle this later.
+    $votes = new VoteUpDown($element['#entity_type'], $element['#entity']);
+    $all_votes = $votes->getVotes();
+    $voteid = empty($items[$delta]['voteid']) ? 0 : $items[$delta]['voteid'];
+
+    $widget = $element;
+
+    $widget += array(
+      'user' => array(
+        '#type' => 'textfield',
+        '#title' => t('User'),
+      ),
+      'value' => array(
+        '#type' => 'textfield',
+        '#title' => t('User'),
+      ),
+      '#voteid' => $voteid,
+      '#element_validate' => array('vote_up_down_widget_validate'),
+    );
+
+
+    if ($voteid) {
+      $vote = $all_votes[$voteid];
+      $widget['user']['#default_value'] = user_load($vote->uid)->name;
+      $widget['value']['#default_value'] = $vote->value;
+    }
+
+    return $widget;
   }
 
   /**

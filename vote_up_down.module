@@ -495,3 +495,27 @@ function vote_up_down_votingapi_insert($votes) {
     $wrapper->save();
   }
 }
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function vote_up_down_field_is_empty($item, $field) {
+  return !empty($item['voteid']);
+}
+
+function vote_up_down_widget_validate() {
+  dpm(func_get_args());
+
+  // Get the current vote.
+
+  // Update he vote/Create a new one for this entity.
+}
+
+/**
+ * Implements hook_entity_presave().
+ */
+function vote_up_down_entity_presave($entity, $type) {
+  // Check if this entity has the vote up down field.
+
+  // Update the fields of the vote with the new votes.
+}

@@ -36,7 +36,7 @@ interface voteUpDownInterface {
   public function view($entity_type, $entity, $field, $instance, $langcode, $items, $display);
 
   /**
-   * When editing the field through the UI.
+   * Provide a nice widgets when editing the entity.
    */
   public function widget(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element);
 

@@ -51,6 +51,20 @@ class VoteUpDown {
   }
 
   /**
+   * Get the entity type.
+   */
+  public function getEntityType() {
+    return $this->entity_type;
+  }
+
+  /**
+   * Get the entity object.
+   */
+  public function getEntity() {
+    return $this->entity;
+  }
+
+  /**
    * Set the context of the class for a specific vote.
    *
    * @param $id
@@ -115,6 +129,8 @@ class VoteUpDown {
     if (!$this->vote_id) {
       $this->missingVote();
     }
+
+    // todo: Delete the vote and remove the reference.
   }
 
   /**
@@ -133,6 +149,7 @@ class VoteUpDown {
    *  The entity object.
    */
   public static function getResults($entity_type, $entity) {
+    // todo: static cache.
     list($id) = entity_extract_ids($entity_type, $entity);
 
     return db_select('votingapi_vote')
