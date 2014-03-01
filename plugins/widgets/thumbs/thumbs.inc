@@ -44,7 +44,25 @@ class voteUpDownThumbs extends voteUpDownBase {
   public function preprocess(&$variables) {
     parent::preprocess($variables);
 
-    // todo: load the field instance settings and check if we need to allow
-    // only up/down or both.
+    // Get some settings.
+    if (!$this->instance) {
+      $this->fieldInfoInstance($variables['entity_type'], $variables['entity_id']);
+    }
+
+    $appearance = $this->instance['settings']['appearance'];
+    if ($appearance == 'both') {
+      // Display up and down. Return early.
+      return;
+    }
+
+    if ($appearance == 'down_only') {
+      $variables['show_up_as_link'] = FALSE;
+      $variables['class_up'] = '';
+    }
+
+    if ($appearance == 'up_only') {
+      $variables['show_down_as_link'] = FALSE;
+      $variables['class_down'] = '';
+    }
   }
 }

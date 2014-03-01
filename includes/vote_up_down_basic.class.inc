@@ -13,6 +13,19 @@ abstract class voteUpDownBase implements voteUpDownInterface {
   public $settings;
 
   /**
+   * The field info.
+   * @var
+   */
+  protected $field;
+
+  /**
+   * The field instance settings.
+   *
+   * @var
+   */
+  protected $instance;
+
+  /**
    * Constructing the class.
    *
    * @param $settings
@@ -20,6 +33,20 @@ abstract class voteUpDownBase implements voteUpDownInterface {
    */
   function __construct(array $settings = array()) {
     $this->settings = $settings;
+  }
+
+  /**
+   * Get the field name and the field name and field instance.
+   *
+   * @param $entity_type
+   *  The entity type.
+   * @param $entity
+   *  The entity object or ID.
+   */
+  public function fieldInfoInstance($entity_type, $entity) {
+    $wrapper = entity_metadata_wrapper($entity_type, $entity);
+    $this->field = VoteUpDown::findField($wrapper->type(), $wrapper->value());
+    $this->instance = field_info_instance($wrapper->type(), $this->field, $wrapper->getBundle());
   }
 
   /**
@@ -58,10 +85,13 @@ abstract class voteUpDownBase implements voteUpDownInterface {
    * @{@inheritdoc}
    */
   public function widget(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+    if (empty($element['entity_type'])) {
+      return;
+    }
+
     $votes = new VoteUpDown($element['#entity_type'], $element['#entity']);
     $all_votes = $votes->getVotes();
     $vote = empty($items[$delta]['voteid']) ? 0 : $all_votes[$items[$delta]['voteid']];
-
 
     $element += array(
       'user' => array(
