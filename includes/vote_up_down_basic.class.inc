@@ -62,9 +62,8 @@ abstract class voteUpDownBase implements voteUpDownInterface {
     $all_votes = $votes->getVotes();
     $vote = empty($items[$delta]['voteid']) ? 0 : $all_votes[$items[$delta]['voteid']];
 
-    $widget = $element;
 
-    $widget += array(
+    $element += array(
       'user' => array(
         '#type' => 'textfield',
         '#title' => t('User'),
@@ -80,11 +79,11 @@ abstract class voteUpDownBase implements voteUpDownInterface {
 
 
     if ($vote) {
-      $widget['user']['#default_value'] = user_load($vote->uid)->name . ' (' . $vote->uid . ')';
-      $widget['value']['#default_value'] = $vote->value;
+      $element['user']['#default_value'] = user_load($vote->uid)->name . ' (' . $vote->uid . ')';
+      $element['value']['#default_value'] = $vote->value;
     }
 
-    return $widget;
+    return $element;
   }
 
   /**

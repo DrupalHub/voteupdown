@@ -548,6 +548,14 @@ function vote_up_down_widget_validate(&$element, &$form_state, $form) {
     }
   }
   else {
+    // When removing the value of the username we need to delete the vote.
+    if (empty($element['user']['#value']) || empty($element['value']['#value'])) {
+      db_delete('votingapi_vote')
+        ->condition('vote_id', $element['#vote']->vote_id)
+        ->execute();
+      return;
+    }
+
     // Get the user ID.
     preg_match("/.+\((\d+)\)/", $element['user']['#value'], $matches);
     $uid = $matches[1];
