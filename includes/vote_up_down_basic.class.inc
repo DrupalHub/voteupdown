@@ -68,6 +68,7 @@ abstract class voteUpDownBase implements voteUpDownInterface {
       'user' => array(
         '#type' => 'textfield',
         '#title' => t('User'),
+        '#autocomplete_path' => 'vote_up_down/users-autocomplete',
       ),
       'value' => array(
         '#type' => 'textfield',
@@ -79,7 +80,7 @@ abstract class voteUpDownBase implements voteUpDownInterface {
 
 
     if ($vote) {
-      $widget['user']['#default_value'] = user_load($vote->uid)->name;
+      $widget['user']['#default_value'] = user_load($vote->uid)->name . ' (' . $vote->uid . ')';
       $widget['value']['#default_value'] = $vote->value;
     }
 

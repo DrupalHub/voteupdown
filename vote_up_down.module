@@ -48,6 +48,13 @@ function vote_up_down_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  $items['vote_up_down/users-autocomplete'] = array(
+    'title' => 'Users autocomplete',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer vote up/down'),
+    'page callback' => 'vote_up_down_users_autocomplete',
+  );
+
   return $items;
 }
 
@@ -521,8 +528,11 @@ function vote_up_down_widget_validate(&$element, &$form_state, $form) {
     }
     else if ($element['user']['#value'] && $element['value']['#value']) {
 
+      preg_match("/.+\((\d+)\)/", $element['user']['#value'], $matches);
+      $uid = $matches[1];
+
       // This is new vote, verify the user doesn't exists already.
-      if (!$user = user_load_by_name($element['user']['#value'])) {
+      if (!$user = user_load($uid)) {
         form_error($element['user'], t('The user name does not exists.'));
         return;
       }
@@ -585,4 +595,28 @@ function vote_up_down_entity_presave($entity, $type) {
 
   $wrapper = entity_metadata_wrapper($type, $entity);
   $wrapper->{$field}->set($votes);
+}
+
+/**
+ * Auto complete users.
+ */
+function vote_up_down_users_autocomplete($string = '') {
+  $query = new EntityFieldQuery();
+  $results = $query
+    ->entityCondition('entity_type', 'user')
+    ->propertyCondition('name', $string, 'CONTAINS')
+    ->execute();
+
+  if (empty($results['user'])) {
+    return;
+  }
+
+  $output = array();
+
+  $users = user_load_multiple(array_keys($results['user']));
+  foreach ($users as $user) {
+    $output[check_plain($user->name) . ' (' . $user->uid . ')'] = check_plain($user->name);
+  }
+
+  drupal_json_output($output);
 }
