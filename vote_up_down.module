@@ -528,6 +528,7 @@ function vote_up_down_widget_validate(&$element, &$form_state, $form) {
     }
     else if ($element['user']['#value'] && $element['value']['#value']) {
 
+      // Get the user ID.
       preg_match("/.+\((\d+)\)/", $element['user']['#value'], $matches);
       $uid = $matches[1];
 
@@ -547,23 +548,42 @@ function vote_up_down_widget_validate(&$element, &$form_state, $form) {
     }
   }
   else {
-    // Before update, check if there any change in the current vote.
-    // todo: Get the uid of the user.
-
-    $uid = 1;
-
-    if ($element['#vote']->uid != $uid || $element['#vote']->value != $element['value']['#value']) {
-      // There was a changed in one of the elements. Updating the vote.
-    }
+    // Get the user ID.
+    preg_match("/.+\((\d+)\)/", $element['user']['#value'], $matches);
+    $uid = $matches[1];
 
     $vote = $element['#vote']->vote_id;
+
+    // Before update, check if there any change in the current vote.
+    if ($element['#vote']->uid != $uid || $element['#vote']->value != $element['value']['#value']) {
+
+      // The user already voted for this entity.
+      if ($element['#vote']->uid != $uid && VoteUpDown::getVotesForUser($element['#entity_type'], $element['#entity'], $uid)) {
+        form_error($element['user'], t('The user %name already voted for this entity.', array('%name' => user_load($uid)->name)));
+        return;
+      }
+
+      // Update the vote entry and return early because no further work is
+      // required.
+
+      VoteUpDown::setVote($element['#entity_type'], $element['#entity'], $element['value']['#value'], $uid, $vote);
+
+      // See documentation below.
+      variable_set('vote_up_down_skip_entity_update', TRUE);
+      return;
+    }
   }
 
   // Get the vote ID.
-  if (is_object($vote) && !empty($vote->vid)) {
+  if (!empty($vote->vid)) {
     $vid = $vote->vid;
   }
   else {
+    if (empty($vote)) {
+      // The vote is empty. Return early.
+      return;
+    }
+
     $vid = $vote;
   }
 

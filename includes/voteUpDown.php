@@ -206,22 +206,38 @@ class VoteUpDown {
    *  The value of the vote.
    * @param $uid
    *  The user ID.
+   * @param $id
+   *  The ID of the vote. Optional.
    *
-   * @return
+   * @return Array
    *  Information about the new vote.
    */
-  public static function setVote($entity_type, $entity, $value, $uid) {
+  public static function setVote($entity_type, $entity, $value, $uid, $id = NULL) {
     $wrapper = entity_metadata_wrapper($entity_type, $entity);
 
-    $votes = array(array(
+    $vote = array(
       'entity_type' => $wrapper->type(),
       'entity_id' => $wrapper->getIdentifier(),
       'value' => $value,
       'uid' => $uid,
-    ));
-    votingapi_set_votes($votes);
+    );
 
-    return $votes[0];
+    if ($id) {
+      // Working with a specific vote ID - we need to update using db_update().
+      db_update('votingapi_vote')
+        ->fields($vote)
+        ->condition('vote_id', $id)
+        ->execute();
+
+      return $vote + array(
+        'vote_id' => $id,
+      );
+    }
+    else {
+      $votes = array($vote);
+      votingapi_set_votes($votes);
+      return $votes[0];
+    }
   }
 
   /**
