@@ -71,7 +71,7 @@ abstract class voteUpDownBase implements voteUpDownInterface {
       ),
       'value' => array(
         '#type' => 'textfield',
-        '#title' => t('User'),
+        '#title' => t('Value'),
       ),
       '#vote' => $vote,
       '#element_validate' => array('vote_up_down_widget_validate'),
