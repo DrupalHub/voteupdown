@@ -48,7 +48,12 @@ class voteUpDownThumbs extends voteUpDownBase {
       $this->fieldInfoInstance($variables['entity_type'], $variables['entity_id']);
     }
 
+    if (empty($this->instance['settings']['appearance'])) {
+      return;
+    }
+
     $appearance = $this->instance['settings']['appearance'];
+
     if ($appearance == 'both') {
       // Display up and down. Return early.
       return;
