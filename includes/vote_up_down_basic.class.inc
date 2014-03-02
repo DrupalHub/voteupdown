@@ -85,14 +85,6 @@ abstract class voteUpDownBase implements voteUpDownInterface {
    * @{@inheritdoc}
    */
   public function widget(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
-    if (empty($element['#entity_type'])) {
-      return;
-    }
-
-    $votes = new VoteUpDown($element['#entity_type'], $element['#entity']);
-    $all_votes = $votes->getVotes();
-    $vote = empty($items[$delta]['voteid']) ? 0 : $all_votes[$items[$delta]['voteid']];
-
     $element += array(
       'user' => array(
         '#type' => 'textfield',
@@ -103,10 +95,19 @@ abstract class voteUpDownBase implements voteUpDownInterface {
         '#type' => 'textfield',
         '#title' => t('Value'),
       ),
-      '#vote' => $vote,
       '#element_validate' => array('vote_up_down_widget_validate'),
     );
 
+    if (empty($element['#entity'])) {
+      $element['#widget'] = TRUE;
+      return $element;
+    }
+
+    $votes = new VoteUpDown($element['#entity_type'], $element['#entity']);
+    $all_votes = $votes->getVotes();
+    $vote = empty($items[$delta]['voteid']) ? 0 : $all_votes[$items[$delta]['voteid']];
+
+    $element['#vote'] = $vote;
 
     if ($vote) {
       $element['user']['#default_value'] = user_load($vote->uid)->name . ' (' . $vote->uid . ')';

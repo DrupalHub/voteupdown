@@ -525,6 +525,11 @@ function vote_up_down_field_is_empty($item, $field) {
  * votes some logic will be needed.
  */
 function vote_up_down_widget_validate(&$element, &$form_state, $form) {
+  if (!empty($element['#widget'])) {
+    // The form was submitted from the widget form. Return early.
+    return;
+  }
+
   if ($element['#vote'] === 0) {
     if (!$element['user']['#value'] xor !$element['value']['#value']) {
       form_error($element, t('User name or value is empty.'));
