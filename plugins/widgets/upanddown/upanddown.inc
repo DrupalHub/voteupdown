@@ -21,29 +21,27 @@ class voteUpAndDown extends voteUpDownBase {
 
   public function preprocess(&$variables) {
     parent::preprocess($variables);
+    $variables['up_points'] =  $this->countVotes($variables['entity_type'], $variables['entity_id'], 'positive');
+    $variables['down_points'] = $this->countVotes($variables['entity_type'], $variables['entity_id'], 'negative');
+  }
 
-    $criteria = array(
-      'entity_type' => $variables['entity_type'],
-      'entity_id' => $variables['entity_id'],
-      'value_type' => 'points',
-      'tag' => $variables['tag'],
-      'function' => 'positives'
-    );
-
-    // todo: This query don't pull the number of the positive vote. Fix this!
-    $positives = (int)votingapi_select_single_result_value($criteria);
-    $variables['up_points'] = $positives;
-
-    $criteria = array(
-      'entity_type' => $variables['entity_type'],
-      'entity_id' => $variables['entity_id'],
-      'value_type' => 'points',
-      'tag' => $variables['tag'],
-      'function' => 'negatives'
-    );
-
-    // todo: This query don't pull the number of the positive vote. Fix this!
-    $negatives = (int)votingapi_select_single_result_value($criteria);
-    $variables['down_points'] = $negatives;
+  /**
+   * Count how much positive/negative votes for an entity.
+   *
+   * @param $entity_type
+   *  The entity type.
+   * @param $entity
+   *  The entity ID or object.
+   * @param $type
+   *  The type of the vote: negative or positive.
+   */
+  private function countVotes($entity_type, $entity, $type) {
+    return db_select('votingapi_vote', 'v')
+      ->fields('v')
+      ->condition('entity_type', $entity_type)
+      ->condition('entity_id', $entity)
+      ->condition('value', $type == 'negative' ? -1 : 1)
+      ->execute()
+      ->rowCount();
   }
 }
