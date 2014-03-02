@@ -29,6 +29,8 @@ class voteUpAndDown extends voteUpDownBase {
       'tag' => $variables['tag'],
       'function' => 'positives'
     );
+
+    // todo: This query don't pull the number of the positive vote. Fix this!
     $positives = (int)votingapi_select_single_result_value($criteria);
     $variables['up_points'] = $positives;
 
@@ -39,6 +41,8 @@ class voteUpAndDown extends voteUpDownBase {
       'tag' => $variables['tag'],
       'function' => 'negatives'
     );
+
+    // todo: This query don't pull the number of the positive vote. Fix this!
     $negatives = (int)votingapi_select_single_result_value($criteria);
     $variables['down_points'] = $negatives;
   }
