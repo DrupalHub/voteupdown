@@ -3,7 +3,7 @@
 /**
  * Most of the work for the widgets handlers will be done here.
  */
-abstract class voteUpDownBase implements voteUpDownInterface {
+class voteUpDownBase implements voteUpDownInterface {
 
   /**
    * Holding the plugin definition.

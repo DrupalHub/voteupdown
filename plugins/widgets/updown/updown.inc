@@ -11,11 +11,8 @@
 $plugin = array(
   'title' => t('Default'),
   'description' => t('Default widget type'),
-  'class' => 'UpDown',
+  'class' => 'voteUpDownBase',
   'assets' => array(
     'css' => array('updown.css'),
   ),
 );
-
-class UpDown extends VoteUpDown {
-}

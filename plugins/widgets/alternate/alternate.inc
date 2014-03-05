@@ -6,10 +6,11 @@
  */
 
 /**
- * Plugin decleration.
+ * Plugin declaration.
  */
 $plugin = array(
   'title' => t('Alternate'),
-  'widget template' => 'widget',
+  'class' => 'voteUpDownBase',
   'description' => t('Alternate widget.'),
+  'css' => array('alternate.css'),
 );
