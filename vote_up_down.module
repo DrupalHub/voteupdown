@@ -37,7 +37,7 @@ function vote_up_down_menu() {
     'page arguments' => array(1, 2, 3, 4, 5),
     'access callback' => 'vote_up_down_access_callback',
     'access arguments' => array('reset vote up/down votes', 1, 2, 3, 4),
-    'type'             => MENU_CALLBACK,
+    'type' => MENU_CALLBACK,
   );
 
   $items['vote_up_down/%ctools_js/denied/%'] = array(
@@ -474,6 +474,60 @@ function vote_up_down_vote($entity_type, $entity_id, $value, $tag, $widget, $tok
 
   print ajax_render($commands);
   exit;
+}
+
+/**
+ * Menu callback; Reset the vote status for this action.
+ */
+function vote_up_down_reset($type, $entity_id, $tag, $widget, $token, $ajax = 'ajax') {
+  // todo: Not working. Fix me!
+  if (drupal_valid_token($token, "votereset/$type/$entity_id/$tag/$widget", TRUE)) {
+    $criteria = array(
+        'entity_type' => $type,
+        'entity_id' => $entity_id,
+        'tag' => $tag,
+      ) + votingapi_current_user_identifier();
+    votingapi_delete_votes(votingapi_select_votes($criteria));
+    votingapi_recalculate_results($type, $entity_id);
+  }
+  else {
+    watchdog('vud',
+      'Could not reset votes on @type @entity_id, tag @tag and token @token',
+      array('@type' => $type, '@entity_id' => $entity_id, '@tag' => $tag, '@token' => $token));
+    drupal_set_message(t('Oops! There was an error resetting your vote!'), 'warning');
+  }
+
+  if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest') {
+    if ($ajax == 'ajax') {
+      $plugin = vud_widget_get($widget);
+      $commands = array();
+
+      if ($function = ctools_plugin_get_function($plugin, 'ajax render')) {
+        $commands = $function($type, $entity_id, $value, $tag, $token, $widget);
+      }
+      else {
+        $variables = array(
+          'entity_id' =>$entity_id,
+          'type' => $type,
+          'tag' => $tag,
+          'widget_theme' => $widget,
+        );
+        if (!empty($plugin['widget template'])) {
+          $commands[] = ajax_command_replace("#widget-$type-$entity_id", theme('vud_widget', $variables));
+        }
+
+        if (!empty($plugin['votes template'])) {
+          $commands[] = ajax_command_replace("#votes-$type-$entity_id", theme('vud_votes', $variables));
+        }
+      }
+
+      print ajax_render($commands);
+      exit;
+    }
+  }
+  else {
+    drupal_goto($_SERVER['HTTP_REFERER']);
+  }
 }
 
 /**
