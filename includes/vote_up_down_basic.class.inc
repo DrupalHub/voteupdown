@@ -223,7 +223,7 @@ class voteUpDownBase implements voteUpDownInterface {
 
       if ($reset_access) {
         $token_reset = drupal_get_token("votereset/$entity_type/$entity_id/$tag/$widget_theme");
-        $variables['link_reset'] = url("votereset/$entity_type/$entity_id/$tag/$widget_theme/$token_reset");
+        $variables['link_reset'] = url("votereset/$entity_type/$entity_id/$tag/$widget_theme/$token_reset/nojs");
         $variables['link_class_reset'] .= ' use-ajax';
       }
     }

@@ -459,18 +459,11 @@ function vote_up_down_vote($entity_type, $entity_id, $value, $tag, $widget, $tok
     drupal_goto($_SERVER['HTTP_REFERER']);
   }
 
-  $commands = array();
-
   $theme = theme('vote_up_down_' . $plugin->settings['name'], array(
     'entity_id' => $entity_id,
     'entity_type' => $entity_type,
   ));
-  $commands[] = ajax_command_replace("#widget-$entity_type-$entity_id", $theme);
-
-  // todo: Do we need this?
-//  if (!empty($plugin['votes template'])) {
-//    $commands[] = ajax_command_replace("#votes-$type-$entity_id", theme('vote_up_down_votes', $variables));
-//  }
+  $commands = array(ajax_command_replace("#widget-$entity_type-$entity_id", $theme));
 
   print ajax_render($commands);
   exit;
@@ -479,55 +472,38 @@ function vote_up_down_vote($entity_type, $entity_id, $value, $tag, $widget, $tok
 /**
  * Menu callback; Reset the vote status for this action.
  */
-function vote_up_down_reset($type, $entity_id, $tag, $widget, $token, $ajax = 'ajax') {
-  // todo: Not working. Fix me!
-  if (drupal_valid_token($token, "votereset/$type/$entity_id/$tag/$widget", TRUE)) {
-    $criteria = array(
-        'entity_type' => $type,
-        'entity_id' => $entity_id,
-        'tag' => $tag,
-      ) + votingapi_current_user_identifier();
-    votingapi_delete_votes(votingapi_select_votes($criteria));
-    votingapi_recalculate_results($type, $entity_id);
-  }
-  else {
-    watchdog('vud',
-      'Could not reset votes on @type @entity_id, tag @tag and token @token',
-      array('@type' => $type, '@entity_id' => $entity_id, '@tag' => $tag, '@token' => $token));
+function vote_up_down_reset($entity_type, $entity_id, $tag, $widget, $token, $ajax = 'ajax') {
+  if (!drupal_valid_token($token, "votereset/$entity_type/$entity_id/$tag/$widget", TRUE)) {
+    $params = array('@type' => $entity_type, '@entity_id' => $entity_id, '@tag' => $tag, '@token' => $token);
+    watchdog('vud', t('Could not reset votes on @type @entity_id, tag @tag and token @token', $params));
     drupal_set_message(t('Oops! There was an error resetting your vote!'), 'warning');
+    return;
   }
 
-  if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest') {
-    if ($ajax == 'ajax') {
-      $plugin = vud_widget_get($widget);
-      $commands = array();
+  $plugin = vote_up_down_load_widget($widget);
 
-      if ($function = ctools_plugin_get_function($plugin, 'ajax render')) {
-        $commands = $function($type, $entity_id, $value, $tag, $token, $widget);
-      }
-      else {
-        $variables = array(
-          'entity_id' =>$entity_id,
-          'type' => $type,
-          'tag' => $tag,
-          'widget_theme' => $widget,
-        );
-        if (!empty($plugin['widget template'])) {
-          $commands[] = ajax_command_replace("#widget-$type-$entity_id", theme('vud_widget', $variables));
-        }
+  $criteria = array(
+    'entity_type' => $entity_type,
+    'entity_id' => $entity_id,
+    'tag' => $tag,
+  ) + votingapi_current_user_identifier();
+  votingapi_delete_votes(votingapi_select_votes($criteria));
+  votingapi_recalculate_results($entity_type, $entity_id);
 
-        if (!empty($plugin['votes template'])) {
-          $commands[] = ajax_command_replace("#votes-$type-$entity_id", theme('vud_votes', $variables));
-        }
-      }
-
-      print ajax_render($commands);
-      exit;
-    }
-  }
-  else {
+  // AJAX is disabled.
+  if ($ajax != 'ajax') {
     drupal_goto($_SERVER['HTTP_REFERER']);
   }
+
+  $theme = theme('vote_up_down_' . $plugin->settings['name'], array(
+    'entity_id' => $entity_id,
+    'entity_type' => $entity_type,
+  ));
+
+  $commands = array(ajax_command_replace("#widget-$entity_type-$entity_id", $theme));
+
+  print ajax_render($commands);
+  exit;
 }
 
 /**
