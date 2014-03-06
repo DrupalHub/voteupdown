@@ -98,9 +98,8 @@ class voteUpDownBase implements voteUpDownInterface {
       '#element_validate' => array('vote_up_down_widget_validate'),
     );
 
-    if (empty($element['#entity'])) {
-      $element['#widget'] = TRUE;
-      return $element;
+    if (!entity_label($element['#entity_type'], $element['#entity'])) {
+      return array();
     }
 
     $votes = new VoteUpDown($element['#entity_type'], $element['#entity']);
