@@ -20,7 +20,7 @@ require_once 'includes/vud_basic.class.inc';
  * Implements hook_init().
  */
 function vud_init() {
-  if (vud_need_update()) {
+  if (vud_need_update() && $_GET['q'] != 'batch') {
     $params = array(
       '@url' => url('admin/config/search/vud-update'),
     );
@@ -796,16 +796,18 @@ function vud_update_submit($form, $form_state) {
 
   // Get all the entities and vote iD's we need to populate with the voting
   // field.
-  $operations[] = array('vud_update_populate_fields');
+  $operations[] = array('vud_update_populate_fields', array());
 
   $batch = array(
     'operations' => $operations,
     'title' => t('Updating'),
     'init_message' => t('Example Batch is starting.'),
     'progress_message' => t('Processed @current out of @total.'),
+    'finished' => 'vud_update_finished',
   );
+
   batch_set($batch);
-  batch_process('node/1');
+  batch_process(url(''));
 }
 
 /**
@@ -897,7 +899,9 @@ function vud_update_populate_fields(&$context) {
   $results = db_select('votingapi_vote', 'v')
     ->fields('v', array('entity_type', 'entity_id', 'vote_id'))
     ->range(0, $batch)
-    ->condition('vote_id', $context['sandbox']['vote_id'], '>=')
+    ->condition('vote_id', $context['sandbox']['vote_id'], '>')
+    ->orderBy('v.entity_type')
+    ->orderBy('v.entity_id')
     ->execute()
     ->fetchAllAssoc('entity_id');
 
@@ -905,26 +909,26 @@ function vud_update_populate_fields(&$context) {
     $info = entity_get_info($result->entity_type);
     $params = array(
       '@entity' => $info['label'],
-      '@id' => $results->entity_id,
+      '@id' => $result->entity_id,
     );
 
     $context['message'] = t('Processing @entity:@id', $params);
 
-    $votes = VoteUpDown::getResults($result->entity_type, $results->entity_id);
-    $field = VoteUpDown::findField($result->entity_type, $results->entity_id);
-    $wrapper = entity_metadata_wrapper($result->entity_type, $results->entity_id);
+    $wrapper = entity_metadata_wrapper($result->entity_type, $result->entity_id);
+    $votes = VoteUpDown::getResults($result->entity_type, $wrapper->value());
+    $field = VoteUpDown::findField($result->entity_type, $wrapper->getIdentifier());
 
-    $wrapper->{$field}->set($votes);
+    $wrapper->{$field}->set(array_keys($votes));
     $wrapper->save();
 
-    // Increase the progress.
-    $context['sandbox']['progress']++;
+    // Save the last vote id we processed.
     $context['sandbox']['vote_id'] = $result->vote_id;
   }
 
-  if ($context['sandbox']['progress'] != $context['sandbox']['max']) {
-    $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
-  }
+  // Increase the progress.
+  $context['sandbox']['progress'] = $context['sandbox']['progress'] + $batch;
+
+  $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
 }
 
 /**
@@ -961,4 +965,24 @@ function _vud_update_attach_field() {
   }
 
   return $info;
+}
+
+/**
+ * Finished callback.
+ */
+function vud_update_finished($success, $results, $operations) {
+  if ($success) {
+    // Set nice message.
+    drupal_set_message(t('The updated process has been finished. You vote update module is updated to 7.x-2.x branch.'));
+
+    // Delete the variable.
+    variable_del('vud_update_required_7200');
+  }
+  else {
+    // An error occurred.
+    // $operations contains the operations that remained unprocessed.
+    $error_operation = reset($operations);
+    $message = t('An error occurred while processing %error_operation with arguments: @arguments', array('%error_operation' => $error_operation[0], '@arguments' => print_r($error_operation[1], TRUE)));
+    drupal_set_message($message, 'error');
+  }
 }
