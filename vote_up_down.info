@@ -1,8 +1,0 @@
-name = Vote up down
-description = Supply field for voting up/down upon an entity
-core = 7.x
-
-; Dependencies.
-dependencies[] = ctools
-dependencies[] = entity
-dependencies[] = votingapi
