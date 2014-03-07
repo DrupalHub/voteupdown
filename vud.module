@@ -723,7 +723,6 @@ function vud_users_autocomplete($string = '') {
  * Update the vote up down.
  */
 function vud_update($form, $form_state) {
-  dpm(field_info_field('vud'));
   $form['field_name'] = array(
     '#type' => 'machine_name',
     '#maxlength' => 32,
@@ -781,7 +780,7 @@ function _vud_update($value) {
 function vud_update_submit($form, $form_state) {
   // Set the first operation: Create the field.
   $operations = array(
-    'vud_update_create_field',
+    array('vud_update_create_field', array('field_' . $form_state['values']['field_name'], $form_state['values']['cardinality'])),
   );
 
   // Get the entities and the bundles we need to attach the field.
@@ -790,13 +789,47 @@ function vud_update_submit($form, $form_state) {
 
   // Get all the entities and vote iD's we need to populate with the voting
   // field.
+
+  $batch = array(
+    'operations' => $operations,
+    'title' => t('Updating'),
+    'init_message' => t('Example Batch is starting.'),
+    'progress_message' => t('Processed @current out of @total.'),
+  );
+  batch_set($batch);
+  batch_process('node/1');
 }
 
 /**
  * Create the field.
  */
-function vud_update_create_field() {
-  field_create_field('vote_up_down');
+function vud_update_create_field($field_name, $cardinality) {
+  $field = array(
+    'active' => 1,
+    'cardinality' => $cardinality,
+    'deleted' => 0,
+    'entity_types' => array(),
+    'field_name' => $field_name,
+    'foreign keys' => array(
+      'votingapi_vote' => array(
+        'columns' => array(
+          'voteid' => 'voteid',
+        ),
+        'table' => 'votingapi_vote',
+      ),
+    ),
+    'indexes' => array(
+      'format' => array(
+        0 => 'voteid',
+      ),
+    ),
+    'locked' => 0,
+    'module' => 'vud',
+    'settings' => array(),
+    'translatable' => 0,
+    'type' => 'vud',
+  );
+  field_create_field($field);
 }
 
 /**
