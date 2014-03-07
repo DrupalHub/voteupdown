@@ -1,0 +1,104 @@
+<?php
+/**
+ * @file
+ * Install, update and uninstall functions for the Vote Up/Down core module.
+ */
+
+/**
+ * Implements hook_field_schema().
+ */
+function vud_field_schema($field) {
+  if ($field['type'] == 'vud') {
+    return array(
+      'columns' => array(
+        'voteid' => array(
+          'type' => 'int',
+          'length' => 12,
+          'not null' => FALSE,
+        )
+      ),
+      'indexes' => array(
+        'format' => array('voteid'),
+      ),
+      'foreign keys' => array(
+        'votingapi_vote' => array(
+          'table' => 'votingapi_vote',
+          'columns' => array('voteid' => 'voteid'),
+        ),
+      ),
+    );
+  }
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function vud_uninstall() {
+  variable_del('vud_tag');
+  variable_del('vud_reset_vote');
+}
+
+/**
+ * First update - Deprecate UpDown in favor of Vote Up/Down.
+ */
+function vud_update_6200() {
+  $ret = array();
+  $ret[] = update_sql("DELETE FROM {variable} WHERE name LIKE('updown%')");
+  $ret[] = update_sql("UPDATE {votingapi_vote} SET tag = 'vote' WHERE tag LIKE('updown')");
+  $ret[] = update_sql("UPDATE {votingapi_cache} SET tag = 'vote' WHERE tag LIKE('updown')");
+
+  if (module_exists('updown')) {
+    $ret[] = drupal_uninstall_schema('updown');
+    drupal_uninstall_module('updown');
+  }
+  if (module_exists('updown_node')) {
+    $ret[] = drupal_uninstall_schema('updown_node');
+    drupal_uninstall_module('updown_node');
+  }
+
+  return $ret;
+}
+
+/**
+ * Rebuild menu for 'votereset/%/%/%/%/%'.
+ */
+function vud_update_7000() {
+  $result = array();
+  menu_rebuild();
+  return $result;
+}
+
+/**
+ * Upgrade vote up down to 7.x-2.x version.
+ */
+function vud_update_7200() {
+  // Disable old modules.
+  module_disable(array('vud_node','vud_comment','vud_term','vud_field'), FALSE);
+
+  // Remove old variables.
+  $variables = array(
+    'vud_node_types',
+    'vud_node_widget',
+    'vud_node_widget_show',
+    'vud_node_votes',
+    'vud_node_reset',
+    'vud_node_widget_vote_on_teaser',
+    'vud_term_types',
+    'vud_term_widget',
+    'vud_term_votetable_show',
+    'vud_term_reset',
+    'vud_comment_node_types',
+    'vud_comment_widget',
+    'vud_comment_widget_display',
+    'vud_comment_votes',
+    'vud_comment_reset',
+  );
+
+  foreach ($variables as $variable) {
+    variable_del($variable);
+  }
+
+  // The user need to go through the update path. Set a vairable that will help
+  // determine that.
+  variable_set('vud_update_required_7200', TRUE);
+}

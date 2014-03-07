@@ -1,58 +1,58 @@
 <?php
 /**
  * @file
- * vote_up_down.module
+ * vud.module
  */
 
 /**
  * Defines. Traces of the 7.x-1.x branch.
  */
-define('VOTE_UP_DOWN_WIDGET_MESSAGE_ERROR', 0);
-define('VOTE_UP_DOWN_WIDGET_MESSAGE_DENIED', 1);
-define('vote_up_down_REQUIRED_CTOOLS_API', '2.0-alpha');
+define('VUD_WIDGET_MESSAGE_ERROR', 0);
+define('VUD_WIDGET_MESSAGE_DENIED', 1);
+define('VUD_REQUIRED_CTOOLS_API', '2.0-alpha');
 
 // Require files.
-require_once 'includes/vote_up_down.class.inc';
+require_once 'includes/vud.class.inc';
 require_once 'includes/voteUpDown.php';
-require_once 'includes/vote_up_down_basic.class.inc';
+require_once 'includes/vud_basic.class.inc';
 
 /**
  * Implements hook_menu().
  */
-function vote_up_down_menu() {
+function vud_menu() {
   $items = array();
 
   $items['vote/%/%/%/%/%/%'] = array(
     'title' => 'Vote',
-    'page callback' => 'vote_up_down_vote',
+    'page callback' => 'vud_vote',
     'page arguments' => array(1, 2, 3, 4, 5, 6),
-    'access callback' => 'vote_up_down_access_callback',
+    'access callback' => 'vud_access_callback',
     'access arguments' => array('use vote up/down', 1, 2, 3, 4),
     'type' => MENU_CALLBACK,
   );
 
   $items['votereset/%/%/%/%/%'] = array(
     'title' => 'Reset vote',
-    'page callback' => 'vote_up_down_reset',
+    'page callback' => 'vud_reset',
     'page arguments' => array(1, 2, 3, 4, 5),
-    'access callback' => 'vote_up_down_access_callback',
+    'access callback' => 'vud_access_callback',
     'access arguments' => array('reset vote up/down votes', 1, 2, 3, 4),
     'type' => MENU_CALLBACK,
   );
 
-  $items['vote_up_down/%ctools_js/denied/%'] = array(
+  $items['vud/%ctools_js/denied/%'] = array(
     'title' => 'Vote denied',
-    'page callback' => 'vote_up_down_denied_vote',
+    'page callback' => 'vud_denied_vote',
     'page arguments' => array(1, 3),
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
 
-  $items['vote_up_down/users-autocomplete'] = array(
+  $items['vud/users-autocomplete'] = array(
     'title' => 'Users autocomplete',
     'access callback' => 'user_access',
     'access arguments' => array('administer vote up/down'),
-    'page callback' => 'vote_up_down_users_autocomplete',
+    'page callback' => 'vud_users_autocomplete',
   );
 
   return $items;
@@ -61,7 +61,7 @@ function vote_up_down_menu() {
 /**
  * Implementation of hook_permission().
  */
-function vote_up_down_permission() {
+function vud_permission() {
   return array(
     'use vote up/down' => array(
       'title' => t('Use Vote Up/Down'),
@@ -85,14 +85,14 @@ function vote_up_down_permission() {
 /**
  * Implements hook_field_info().
  */
-function vote_up_down_field_info() {
-  $field_info['vote_up_down'] = array(
+function vud_field_info() {
+  $field_info['vud'] = array(
     'label' => t('Vote up down'),
     'description' => t('Supply voting widgets for entity.'),
     'settings' => array(),
     'default_widget' => 'updown',
     'default_formatter' => 'updown',
-    'property_callbacks' => array('vote_up_down_property_callback'),
+    'property_callbacks' => array('vud_property_callback'),
   );
 
   return $field_info;
@@ -101,14 +101,14 @@ function vote_up_down_field_info() {
 /**
  * Implements hook_field_widget_info().
  */
-function vote_up_down_field_widget_info() {
+function vud_field_widget_info() {
   $widgets = VoteUpDown::getWidgets();
 
   foreach ($widgets as $widget => $info) {
     $widgets[$widget] = array(
       'label' => $info['title'],
       'description' => $info['description'],
-      'field types' => array('vote_up_down'),
+      'field types' => array('vud'),
       'settings' => array(),
     );
   }
@@ -119,11 +119,11 @@ function vote_up_down_field_widget_info() {
 /**
  * Implementation of hook_field_formatter_info().
  */
-function vote_up_down_field_formatter_info() {
+function vud_field_formatter_info() {
   return array(
-    'vote_up_down' => array(
+    'vud' => array(
       'label' => t('Vote up down'),
-      'field types' => array('vote_up_down'),
+      'field types' => array('vud'),
     ),
   );
 }
@@ -131,18 +131,18 @@ function vote_up_down_field_formatter_info() {
 /**
  * Implements hook_field_is_empty().
  */
-function vote_up_down_field_is_empty($item, $field) {
+function vud_field_is_empty($item, $field) {
   return !empty($item);
 }
 
 /**
  * Property callback; Define setter and callback function.
  */
-function vote_up_down_property_callback(&$info, $entity_type, $field, $instance, $field_type) {
+function vud_property_callback(&$info, $entity_type, $field, $instance, $field_type) {
   $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$field['field_name']];
-  $property['getter callback'] = 'vote_up_down_getter_callback';
-  $property['setter callback'] = 'vote_up_down_setter_callback';
-  $property['validation callback'] = 'vote_up_down_validation_callback';
+  $property['getter callback'] = 'vud_getter_callback';
+  $property['setter callback'] = 'vud_setter_callback';
+  $property['validation callback'] = 'vud_validation_callback';
   $property['type'] = 'unknown';
   $property['label'] = t('Vote up down');
 }
@@ -150,14 +150,14 @@ function vote_up_down_property_callback(&$info, $entity_type, $field, $instance,
 /**
  * Getter callback;
  */
-function vote_up_down_getter_callback($entity, array $options, $name, $entity_type, &$context) {
+function vud_getter_callback($entity, array $options, $name, $entity_type, &$context) {
   return new VoteUpDown($entity_type, $entity);
 }
 
 /**
  * Setter callback;
  */
-function vote_up_down_setter_callback($entity, $name, $items, $langcode, $entity_type) {
+function vud_setter_callback($entity, $name, $items, $langcode, $entity_type) {
   $field_info = field_info_field($name);
 
   if ($field_info['cardinality'] == 1) {
@@ -203,7 +203,7 @@ function vote_up_down_setter_callback($entity, $name, $items, $langcode, $entity
  * Validation callback; The validation will be done in the setter callback when
  * more context is available: cardinality of the field, voting ID etc. etc.
  */
-function vote_up_down_validation_callback() {
+function vud_validation_callback() {
   return TRUE;
 }
 
@@ -212,16 +212,16 @@ function vote_up_down_validation_callback() {
  *
  * Declaring themes for plugins.
  */
-function vote_up_down_theme() {
+function vud_theme() {
   $widgets = VoteUpDown::getWidgets();
 
   $theme = array();
 
   foreach ($widgets as $widget => $info) {
-    $theme['vote_up_down_' . $widget] = array(
+    $theme['vud_' . $widget] = array(
       'template' => 'widget',
       'path' => $info['path'],
-      'preprocess functions' => array('vote_up_down_widget_preprocess'),
+      'preprocess functions' => array('vud_widget_preprocess'),
       'variables' => array(
         'widget' => $widget,
         'entity_id' => NULL,
@@ -253,7 +253,7 @@ function vote_up_down_theme() {
  * @return bool
  *  Boolean flagging whether or not the user has access to the vote.
  */
-function vote_up_down_access_callback($permission, $entity_type, $entity_id, $value, $tag, $account = NULL) {
+function vud_access_callback($permission, $entity_type, $entity_id, $value, $tag, $account = NULL) {
   if ($account === NULL) {
     global $user;
     $account = $user;
@@ -266,7 +266,7 @@ function vote_up_down_access_callback($permission, $entity_type, $entity_id, $va
 
   // Although the user holds the proper permission we should allow other module
   // to interrupt during the access function.
-  $access_array = module_invoke_all('vote_up_down_access', $permission, $entity_type, $entity_id, $value, $tag, $account);
+  $access_array = module_invoke_all('vud_access', $permission, $entity_type, $entity_id, $value, $tag, $account);
 
   foreach ($access_array as $access_result) {
     if ($access_result !== TRUE) {
@@ -281,8 +281,8 @@ function vote_up_down_access_callback($permission, $entity_type, $entity_id, $va
 /**
  * Pre process function callback.
  */
-function vote_up_down_widget_preprocess(&$variables) {
-  $widget = vote_up_down_load_widget($variables['widget']);
+function vud_widget_preprocess(&$variables) {
+  $widget = vud_load_widget($variables['widget']);
 
   // Get all the assets.
   $css = empty($widget->settings['assets']['css']) ? '' : $widget->settings['assets']['css'];
@@ -316,8 +316,8 @@ function vote_up_down_widget_preprocess(&$variables) {
 /**
  * Implements hook_ctools_plugin_api().
  */
-function vote_up_down_ctools_plugin_api($module, $api) {
-  if ($module == 'vote_up_down' && $api == 'widgets') {
+function vud_ctools_plugin_api($module, $api) {
+  if ($module == 'vud' && $api == 'widgets') {
     return array('version' => 1);
   }
 }
@@ -325,7 +325,7 @@ function vote_up_down_ctools_plugin_api($module, $api) {
 /**
  * Implements hook_ctools_plugin_type().
  */
-function vote_up_down_ctools_plugin_type() {
+function vud_ctools_plugin_type() {
   $plugins['widgets'] = array(
     'classes' => array('class'),
   );
@@ -336,8 +336,8 @@ function vote_up_down_ctools_plugin_type() {
 /**
  * Implements hook_ctools_plugin_directory().
  */
-function vote_up_down_ctools_plugin_directory($owner, $plugin_type) {
-  if ($owner == 'vote_up_down' && $plugin_type == 'widgets') {
+function vud_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'vud' && $plugin_type == 'widgets') {
     return 'plugins/widgets';
   }
 }
@@ -351,13 +351,13 @@ function vote_up_down_ctools_plugin_directory($owner, $plugin_type) {
  * @throws Exception
  * @return voteUpDownBase
  */
-function vote_up_down_load_widget($widget) {
+function vud_load_widget($widget) {
   $object_cache = drupal_static(__FUNCTION__);
 
   if (!isset($object_cache[$widget])) {
     ctools_include('plugins');
-    $plugin = ctools_get_plugins('vote_up_down', 'widgets', $widget);
-    $class = ctools_plugin_load_class('vote_up_down', 'widgets', $widget, 'class');
+    $plugin = ctools_get_plugins('vud', 'widgets', $widget);
+    $class = ctools_plugin_load_class('vud', 'widgets', $widget, 'class');
 
     if (!$class) {
       throw new Exception(t('The @widget class id undefined', array('@widget' => $plugin['class'])));
@@ -372,28 +372,28 @@ function vote_up_down_load_widget($widget) {
 /**
  * Implements hook_field_instance_settings_form().
  */
-function vote_up_down_field_instance_settings_form($field, $instance) {
-  return vote_up_down_load_widget($instance['widget']['type'])->instanceSettings($instance['settings']);
+function vud_field_instance_settings_form($field, $instance) {
+  return vud_load_widget($instance['widget']['type'])->instanceSettings($instance['settings']);
 }
 
 /**
  * Implements hook_field_widget_form().
  */
-function vote_up_down_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
-  return vote_up_down_load_widget($instance['widget']['type'])->widget($form, $form_state, $field, $instance, $langcode, $items, $delta, $element);
+function vud_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  return vud_load_widget($instance['widget']['type'])->widget($form, $form_state, $field, $instance, $langcode, $items, $delta, $element);
 }
 
 /**
  * Implements hook_field_formatter_view().
  */
-function vote_up_down_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
-  return vote_up_down_load_widget($instance['widget']['type'])->view($entity_type, $entity, $field, $instance, $langcode, $items, $display);
+function vud_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  return vud_load_widget($instance['widget']['type'])->view($entity_type, $entity, $field, $instance, $langcode, $items, $display);
 }
 
 /**
  * Implements hook_field_prepare_view().
  */
-function vote_up_down_field_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items) {
+function vud_field_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items) {
   foreach ($entities as $id => $entity) {
     if (empty($items[$id])) {
       $items[$id][0] = $entity;
@@ -404,7 +404,7 @@ function vote_up_down_field_prepare_view($entity_type, $entities, $field, $insta
 /**
  * Function for the main voting handler with Ajax support.
  */
-function vote_up_down_vote($entity_type, $entity_id, $value, $tag, $widget, $token, $ajax = 'ajax') {
+function vud_vote($entity_type, $entity_id, $value, $tag, $widget, $token, $ajax = 'ajax') {
   // If the user is anonymous we don't need to check for a token.
   if (!is_numeric($value) || !drupal_valid_token($token, "vote/$entity_type/$entity_id/$value/$tag/$widget", TRUE)) {
     return MENU_ACCESS_DENIED;
@@ -412,8 +412,8 @@ function vote_up_down_vote($entity_type, $entity_id, $value, $tag, $widget, $tok
 
   global $user;
   $account = clone $user;
-  $tag = $tag ? $tag : variable_get('vote_up_down_tag', 'vote');
-  $plugin = vote_up_down_load_widget($widget);
+  $tag = $tag ? $tag : variable_get('vud_tag', 'vote');
+  $plugin = vud_load_widget($widget);
 
   $vote = array();
   $casted_vote_criteria = array(
@@ -439,7 +439,7 @@ function vote_up_down_vote($entity_type, $entity_id, $value, $tag, $widget, $tok
       '@tag' => $tag,
       '@token' => $token,
     );
-    watchdog('vote_up_down', 'Invalid vote on @type @content_id, with value @value, tag @tag and token @token', $params);
+    watchdog('vud', 'Invalid vote on @type @content_id, with value @value, tag @tag and token @token', $params);
     return;
   }
 
@@ -452,7 +452,7 @@ function vote_up_down_vote($entity_type, $entity_id, $value, $tag, $widget, $tok
   $vote['entity_id'] = $entity_id;
   $vote['entity_type'] = $entity_type;
   $votes = array(0 => $vote);
-  drupal_alter('vote_up_down_votes', $votes);
+  drupal_alter('vud_votes', $votes);
 
   // Do not allow to vote with the same value.
   if ($casted_vote == $votes[0]['value']) {
@@ -466,7 +466,7 @@ function vote_up_down_vote($entity_type, $entity_id, $value, $tag, $widget, $tok
     drupal_goto($_SERVER['HTTP_REFERER']);
   }
 
-  $theme = theme('vote_up_down_' . $plugin->settings['name'], array(
+  $theme = theme('vud_' . $plugin->settings['name'], array(
     'entity_id' => $entity_id,
     'entity_type' => $entity_type,
   ));
@@ -479,7 +479,7 @@ function vote_up_down_vote($entity_type, $entity_id, $value, $tag, $widget, $tok
 /**
  * Menu callback; Reset the vote status for this action.
  */
-function vote_up_down_reset($entity_type, $entity_id, $tag, $widget, $token, $ajax = 'ajax') {
+function vud_reset($entity_type, $entity_id, $tag, $widget, $token, $ajax = 'ajax') {
   if (!drupal_valid_token($token, "votereset/$entity_type/$entity_id/$tag/$widget", TRUE)) {
     $params = array('@type' => $entity_type, '@entity_id' => $entity_id, '@tag' => $tag, '@token' => $token);
     watchdog('vud', t('Could not reset votes on @type @entity_id, tag @tag and token @token', $params));
@@ -487,7 +487,7 @@ function vote_up_down_reset($entity_type, $entity_id, $tag, $widget, $token, $aj
     return;
   }
 
-  $plugin = vote_up_down_load_widget($widget);
+  $plugin = vud_load_widget($widget);
 
   $criteria = array(
     'entity_type' => $entity_type,
@@ -502,7 +502,7 @@ function vote_up_down_reset($entity_type, $entity_id, $tag, $widget, $token, $aj
     drupal_goto($_SERVER['HTTP_REFERER']);
   }
 
-  $theme = theme('vote_up_down_' . $plugin->settings['name'], array(
+  $theme = theme('vud_' . $plugin->settings['name'], array(
     'entity_id' => $entity_id,
     'entity_type' => $entity_type,
   ));
@@ -518,10 +518,10 @@ function vote_up_down_reset($entity_type, $entity_id, $tag, $widget, $token, $aj
  *
  * When a new vote is created set the voting ID in the field of the entity.
  */
-function vote_up_down_votingapi_insert($votes) {
-  if (variable_get('vote_up_down_skip_entity_update')) {
+function vud_votingapi_insert($votes) {
+  if (variable_get('vud_skip_entity_update')) {
     // One of the modules notify to skip the update of the entity.
-    variable_del('vote_up_down_skip_entity_update');
+    variable_del('vud_skip_entity_update');
     return;
   }
 
@@ -554,7 +554,7 @@ function vote_up_down_votingapi_insert($votes) {
  * Widget validate; Due to the special widget iv'e created for managing the
  * votes some logic will be needed.
  */
-function vote_up_down_widget_validate(&$element, &$form_state, $form) {
+function vud_widget_validate(&$element, &$form_state, $form) {
   if (!empty($element['#widget'])) {
     // The form was submitted from the widget form. Return early.
     return;
@@ -616,7 +616,7 @@ function vote_up_down_widget_validate(&$element, &$form_state, $form) {
       VoteUpDown::setVote($element['#entity_type'], $element['#entity'], $element['value']['#value'], $uid, $vote);
 
       // See documentation below.
-      variable_set('vote_up_down_skip_entity_update', TRUE);
+      variable_set('vud_skip_entity_update', TRUE);
       return;
     }
   }
@@ -637,7 +637,7 @@ function vote_up_down_widget_validate(&$element, &$form_state, $form) {
   // When dealing with node and setting the value there is a problem with the
   // time stamp. Notify later on that the node don't need to updated further on.
   // This will deal in the entity pre save.
-  variable_set('vote_up_down_skip_entity_update', TRUE);
+  variable_set('vud_skip_entity_update', TRUE);
 
   // Set the value in the element.
   form_set_value($element, $vid, $form_state);
@@ -649,7 +649,7 @@ function vote_up_down_widget_validate(&$element, &$form_state, $form) {
  * Due to the special widget iv'e created for managing the votes some logic will
  * be needed.
  */
-function vote_up_down_entity_presave($entity, $type) {
+function vud_entity_presave($entity, $type) {
   if (!$field = VoteUpDown::findField($type, $entity)) {
     // The field of the vote up down don't exists. Return early.
     return;
@@ -667,7 +667,7 @@ function vote_up_down_entity_presave($entity, $type) {
 /**
  * Auto complete users.
  */
-function vote_up_down_users_autocomplete($string = '') {
+function vud_users_autocomplete($string = '') {
   $query = new EntityFieldQuery();
   $results = $query
     ->entityCondition('entity_type', 'user')

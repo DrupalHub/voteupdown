@@ -245,7 +245,7 @@ class VoteUpDown {
    */
   public static function getWidgets() {
     ctools_include('plugins');
-    return ctools_get_plugins('vote_up_down', 'widgets');
+    return ctools_get_plugins('vud', 'widgets');
   }
 
   /**
@@ -263,7 +263,7 @@ class VoteUpDown {
     foreach ($instances as $instance) {
       $field = field_info_field($instance['field_name']);
 
-      if ($field['type'] == 'vote_up_down') {
+      if ($field['type'] == 'vud') {
         return $instance['field_name'];
       }
     }

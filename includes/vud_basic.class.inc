@@ -72,7 +72,7 @@ class voteUpDownBase implements voteUpDownInterface {
     $wrapper = entity_metadata_wrapper($entity_type, $entity);
 
     $elements[0] = array(
-      '#markup' => theme('vote_up_down_' . $this->settings['name'], array(
+      '#markup' => theme('vud_' . $this->settings['name'], array(
         'entity_id' => $wrapper->getIdentifier(),
         'entity_type' => $wrapper->type(),
       )),
@@ -89,13 +89,13 @@ class voteUpDownBase implements voteUpDownInterface {
       'user' => array(
         '#type' => 'textfield',
         '#title' => t('User'),
-        '#autocomplete_path' => 'vote_up_down/users-autocomplete',
+        '#autocomplete_path' => 'vud/users-autocomplete',
       ),
       'value' => array(
         '#type' => 'textfield',
         '#title' => t('Value'),
       ),
-      '#element_validate' => array('vote_up_down_widget_validate'),
+      '#element_validate' => array('vud_widget_validate'),
     );
 
     if (!entity_label($element['#entity_type'], $element['#entity'])) {
@@ -122,7 +122,7 @@ class voteUpDownBase implements voteUpDownInterface {
   public function preprocess(&$variables) {
     // Default value of the variables.
     $variables += array(
-      'widget_message_code' => VOTE_UP_DOWN_WIDGET_MESSAGE_DENIED,
+      'widget_message_code' => vud_WIDGET_MESSAGE_DENIED,
       'readonly' => FALSE,
       'tag' => variable_get('vud_tag', 'vote'),
       'id' => 'widget-' . $variables['entity_type'] . '-' . $variables['entity_id'],
@@ -172,7 +172,7 @@ class voteUpDownBase implements voteUpDownInterface {
       if (!$readonly) {
         $up_access = $user_vote <= 0;
         $down_access = $user_vote >= 0;
-        $reset_access = ($user_vote != 0) && vote_up_down_access_callback('reset vote up/down votes', $entity_type, $entity_id, NULL, $tag);
+        $reset_access = ($user_vote != 0) && vud_access_callback('reset vote up/down votes', $entity_type, $entity_id, NULL, $tag);
 
         if (!$up_access && !$down_access) {
           // Although implementing modules have requested a not readonly widget,
@@ -243,7 +243,7 @@ class voteUpDownBase implements voteUpDownInterface {
 
       // TODO: Get default $widget_message_code or one from $variables.
       // Traces of 7.x-1.x branch, don't blame me.
-      $widget_message_code = VOTE_UP_DOWN_WIDGET_MESSAGE_DENIED;
+      $widget_message_code = vud_WIDGET_MESSAGE_DENIED;
 
       $variables['link_up'] = url(sprintf('vud/nojs/denied/%d', $widget_message_code));
       $variables['link_down'] = url(sprintf('vud/nojs/denied/%d', $widget_message_code));
