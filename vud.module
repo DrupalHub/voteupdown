@@ -796,6 +796,7 @@ function vud_update_submit($form, $form_state) {
 
   // Get all the entities and vote iD's we need to populate with the voting
   // field.
+  $operations[] = array('vud_update_populate_fields');
 
   $batch = array(
     'operations' => $operations,
@@ -810,7 +811,8 @@ function vud_update_submit($form, $form_state) {
 /**
  * Create the field.
  */
-function vud_update_create_field($field_name, $cardinality) {
+function vud_update_create_field($field_name, $cardinality, &$context) {
+  $context['message'] = t('Creating the vote field');
   $field = array(
     'active' => 1,
     'cardinality' => $cardinality,
@@ -850,8 +852,16 @@ function vud_update_create_field($field_name, $cardinality) {
  *  The entity bundle.
  * @param $widget
  *  The widget type.
+ * @param $context
+ *  The context of the sandbox.
  */
-function vud_update_attach_field($entity_type, $field, $bundle, $widget) {
+function vud_update_attach_field($entity_type, $field, $bundle, $widget, &$context) {
+  $info = entity_get_info($entity_type);
+  $params = array(
+    '@entity' => $info['label'],
+    '@bundle' => $info['bundles'][$bundle]['label'],
+  );
+  $context['message'] = t('Attaching the field to @entity of @bundle type', $params);
   $instance = array(
     'bundle' => $bundle,
     'entity_type' => $entity_type,
@@ -867,6 +877,54 @@ function vud_update_attach_field($entity_type, $field, $bundle, $widget) {
   );
 
   field_create_instance($instance);
+}
+
+/**
+ * Populate the fields.
+ */
+function vud_update_populate_fields(&$context) {
+  if (!isset($context['sandbox']['progress'])) {
+    $context['sandbox']['progress'] = 0;
+    $context['sandbox']['vote_id'] = 0;
+    $context['sandbox']['max'] = db_select('votingapi_vote', 'v')
+      ->fields('v', array('entity_type', 'entity_id'))
+      ->execute()
+      ->rowCount();
+  }
+
+  $batch = 250;
+
+  $results = db_select('votingapi_vote', 'v')
+    ->fields('v', array('entity_type', 'entity_id', 'vote_id'))
+    ->range(0, $batch)
+    ->condition('vote_id', $context['sandbox']['vote_id'], '>=')
+    ->execute()
+    ->fetchAllAssoc('entity_id');
+
+  foreach ($results as $result) {
+    $info = entity_get_info($result->entity_type);
+    $params = array(
+      '@entity' => $info['label'],
+      '@id' => $results->entity_id,
+    );
+
+    $context['message'] = t('Processing @entity:@id', $params);
+
+    $votes = VoteUpDown::getResults($result->entity_type, $results->entity_id);
+    $field = VoteUpDown::findField($result->entity_type, $results->entity_id);
+    $wrapper = entity_metadata_wrapper($result->entity_type, $results->entity_id);
+
+    $wrapper->{$field}->set($votes);
+    $wrapper->save();
+
+    // Increase the progress.
+    $context['sandbox']['progress']++;
+    $context['sandbox']['vote_id'] = $result->vote_id;
+  }
+
+  if ($context['sandbox']['progress'] != $context['sandbox']['max']) {
+    $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
+  }
 }
 
 /**
