@@ -17,6 +17,18 @@ require_once 'includes/voteUpDown.php';
 require_once 'includes/vud_basic.class.inc';
 
 /**
+ * Implements hook_init().
+ */
+function vud_init() {
+  if (vud_need_update()) {
+    $params = array(
+      '@url' => url('admin/config/search/vud-update'),
+    );
+    drupal_set_message(t('You need to update your vote update module. Please visit <a href="@url">here</a> and update your module.', $params), 'warning');
+  }
+}
+
+/**
  * Implements hook_menu().
  */
 function vud_menu() {
@@ -50,12 +62,27 @@ function vud_menu() {
 
   $items['vud/users-autocomplete'] = array(
     'title' => 'Users autocomplete',
-    'access callback' => 'user_access',
     'access arguments' => array('administer vote up/down'),
     'page callback' => 'vud_users_autocomplete',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['admin/config/search/vud-update'] = array(
+    'title' => 'Update vote up down',
+    'description' => 'Update the vote up down module.',
+    'access callback' => 'vud_need_update',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('vud_update'),
   );
 
   return $items;
+}
+
+/**
+ * Determine if the vote up down need to go through the update path.
+ */
+function vud_need_update() {
+  return variable_get('vud_update_required_7200') && user_access('administer vote up/down');
 }
 
 /**
@@ -229,6 +256,10 @@ function vud_theme() {
       ),
     );
   }
+
+  $theme['vud_update'] = array(
+    'render element' => 'form',
+  );
 
   return $theme;
 }
@@ -687,3 +718,87 @@ function vud_users_autocomplete($string = '') {
 
   drupal_json_output($output);
 }
+
+/**
+ * Update the vote up down.
+ */
+function vud_update($form, $form_state) {
+  dpm(field_info_field('vud'));
+  $form['field_name'] = array(
+    '#type' => 'machine_name',
+    '#maxlength' => 32,
+    '#machine_name' => array(
+      'exists' => '_vud_update',
+    ),
+    '#description' => t('Enter a field name(field prefix will be added automatically).'),
+  );
+
+  $form['cardinality'] = array(
+    '#type' => 'select',
+    '#title' => t('Number of values'),
+    '#options' => array(FIELD_CARDINALITY_UNLIMITED => t('Unlimited')) + drupal_map_assoc(range(1, 10)),
+    '#description' => t('Please choose the field cardinality.'),
+  );
+
+  $widgets = VoteUpDown::getWidgets();
+
+  foreach ($widgets as $widget => $info) {
+    $widgets[$widget] = $info['title'];
+  }
+
+  $form['widget'] = array(
+    '#type' => 'select',
+    '#title' => t('Widget type'),
+    '#options' => $widgets,
+  );
+
+  $form['actions'] = array(
+    '#type' => 'actions',
+    'submit' => array(
+      '#type' => 'submit',
+      '#value' => t('Update!'),
+    ),
+  );
+
+  return $form;
+}
+
+/**
+ * Verify the field is not exists.
+ */
+function _vud_update($value) {
+  // Prefix with 'field_'.
+  $field_name = 'field_' . $value;
+
+  // We need to check inactive fields as well, so we can't use
+  // field_info_fields().
+  return (bool) field_read_fields(array('field_name' => $field_name));
+}
+
+/**
+ * Process all the information from the form and them create batch.
+ */
+function vud_update_submit($form, $form_state) {
+  // Set the first operation: Create the field.
+  $operations = array(
+    'vud_update_create_field',
+  );
+
+  // Get the entities and the bundles we need to attach the field.
+
+  // Set operation for create the instance.
+
+  // Get all the entities and vote iD's we need to populate with the voting
+  // field.
+}
+
+/**
+ * Create the field.
+ */
+function vud_update_create_field() {
+  field_create_field('vote_up_down');
+}
+
+/**
+ *
+ */

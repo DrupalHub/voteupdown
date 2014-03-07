@@ -36,6 +36,7 @@ function vud_field_schema($field) {
 function vud_uninstall() {
   variable_del('vud_tag');
   variable_del('vud_reset_vote');
+  variable_del('vud_update_required_7200');
 }
 
 /**
