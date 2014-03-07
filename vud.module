@@ -778,14 +778,21 @@ function _vud_update($value) {
  * Process all the information from the form and them create batch.
  */
 function vud_update_submit($form, $form_state) {
+  $operations = array();
+
   // Set the first operation: Create the field.
-  $operations = array(
-    array('vud_update_create_field', array('field_' . $form_state['values']['field_name'], $form_state['values']['cardinality'])),
-  );
+  $field_name = 'field_' . $form_state['values']['field_name'];
+  $operations[] = array('vud_update_create_field', array($field_name, $form_state['values']['cardinality']));
 
   // Get the entities and the bundles we need to attach the field.
+  $info = _vud_update_attach_field();
 
   // Set operation for create the instance.
+  foreach ($info as $entity => $bundles) {
+    foreach ($bundles as $bundle) {
+      $operations[] = array('vud_update_attach_field', array($entity, $field_name, $bundle, $form_state['values']['widget']));
+    }
+  }
 
   // Get all the entities and vote iD's we need to populate with the voting
   // field.
@@ -833,5 +840,67 @@ function vud_update_create_field($field_name, $cardinality) {
 }
 
 /**
+ * Attach fields to entity instances.
  *
+ * @param $entity_type
+ *  The entity type.
+ * @param $field
+ *  The field name.
+ * @param $bundle
+ *  The entity bundle.
+ * @param $widget
+ *  The widget type.
  */
+function vud_update_attach_field($entity_type, $field, $bundle, $widget) {
+  $instance = array(
+    'bundle' => $bundle,
+    'entity_type' => $entity_type,
+    'field_name' => $field,
+    'label' => t('Vote'),
+    'widget' => array(
+      'active' => 0,
+      'module' => 'vud',
+      'settings' => array(),
+      'type' => $widget,
+      'weight' => 0,
+    ),
+  );
+
+  field_create_instance($instance);
+}
+
+/**
+ * Helper function; Get the entity types and bundles which we need to create
+ * a vote up down instance.
+ */
+function _vud_update_attach_field() {
+  $results = db_select('votingapi_vote', 'v')
+    ->fields('v', array('entity_type', 'entity_id'))
+    ->execute()
+    ->fetchAllAssoc('entity_id');
+
+  // Build array with the entity types and their ID.
+  $entities = $info = array();
+  foreach ($results as $result) {
+    $entities[$result->entity_type][] = $result->entity_id;
+    $info[$result->entity_type] = array();
+  }
+
+  foreach ($entities as $type => $ids) {
+    // Load all the entities from that type.
+    $data = entity_load($type, $ids);
+
+    foreach ($data as $entity) {
+      $wrapper = entity_metadata_wrapper($type, $entity);
+
+      if (is_array($info[$type]) && in_array($wrapper->getBundle(), $info[$type])) {
+        continue;
+      }
+
+      // Gather the bundles of the that entity type.
+      $info[$type][] = $wrapper->getBundle();
+    }
+  }
+
+  return $info;
+}

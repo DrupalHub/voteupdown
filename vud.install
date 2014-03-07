@@ -76,6 +76,9 @@ function vud_update_7200() {
   // Disable old modules.
   module_disable(array('vud_node','vud_comment','vud_term','vud_field'), FALSE);
 
+  // Module enable.
+  module_enable(array('entity', 'ctools'));
+
   // Remove old variables.
   $variables = array(
     'vud_node_types',
