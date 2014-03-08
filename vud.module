@@ -803,7 +803,7 @@ function vud_update_submit($form, $form_state) {
   );
 
   batch_set($batch);
-  batch_process(url(''));
+  batch_process(variable_get('site_frontpage', 'node'));
 }
 
 /**
@@ -845,6 +845,7 @@ function vud_update_create_field($field_name, $cardinality, &$context) {
  */
 function vud_update_collect_field(&$context) {
   $context['message'] = t('Collecting the entities we need to attach the vote up down field.');
+
   if (!isset($context['sandbox']['progress'])) {
     $context['sandbox']['progress'] = 0;
     $context['sandbox']['vote_id'] = 0;
@@ -859,9 +860,8 @@ function vud_update_collect_field(&$context) {
   $results = db_select('votingapi_vote', 'v')
     ->fields('v', array('entity_type', 'entity_id', 'vote_id'))
     ->range(0, $batch)
-    ->condition('v.vote_id', $context['sandbox']['vote_id'], '>')
-    ->orderBy('v.entity_type')
-    ->orderBy('v.entity_id')
+    ->condition('vote_id', $context['sandbox']['vote_id'], '>=')
+    ->orderBy('vote_id')
     ->execute()
     ->fetchAllAssoc('vote_id');
 
@@ -883,17 +883,26 @@ function vud_update_collect_field(&$context) {
     foreach ($data as $entity) {
       $wrapper = entity_metadata_wrapper($type, $entity);
 
+      if (in_array($wrapper->getBundle(), $context['sandbox']['fields'][$type])) {
+        continue;
+      }
+
       // Gather the bundles of the that entity type.
       $context['sandbox']['fields'][$type][] = $wrapper->getBundle();
     }
   }
 
-  // todo: Nodes are not added here.
-  variable_set('vud_update_fields', $context['sandbox']['fields']);
-
   // Increase the progress.
   $context['sandbox']['progress'] = $context['sandbox']['progress'] + $batch;
   $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
+
+  // Change the message.
+  $context['message'] = t('Last processed vote ID: @id', array('@id' => $context['sandbox']['vote_id']));
+
+  // When this batch finished set the variable of the fields.
+  if ($context['finished']) {
+    variable_set('vud_update_fields', $context['sandbox']['fields']);
+  }
 }
 
 /**
@@ -911,10 +920,6 @@ function vud_update_attach_field($field, $widget, &$context) {
 
   foreach ($info as $entity => $bundles) {
     foreach ($bundles as $bundle) {
-      if (field_info_instance($entity, $field, $bundle)) {
-        continue;
-      }
-
       $info = entity_get_info($entity);
 
       $params = array(
@@ -960,11 +965,10 @@ function vud_update_populate_fields(&$context) {
   $results = db_select('votingapi_vote', 'v')
     ->fields('v', array('entity_type', 'entity_id', 'vote_id'))
     ->range(0, $batch)
-    ->condition('vote_id', $context['sandbox']['vote_id'], '>')
-    ->orderBy('v.entity_type')
-    ->orderBy('v.entity_id')
+    ->condition('vote_id', $context['sandbox']['vote_id'], '>=')
+    ->orderBy('vote_id')
     ->execute()
-    ->fetchAllAssoc('entity_id');
+    ->fetchAllAssoc('vote_id');
 
   foreach ($results as $result) {
     $info = entity_get_info($result->entity_type);
@@ -989,6 +993,7 @@ function vud_update_populate_fields(&$context) {
   // Increase the progress.
   $context['sandbox']['progress'] = $context['sandbox']['progress'] + $batch;
 
+  // Affect the progress bar.
   $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
 }
 
@@ -1001,9 +1006,8 @@ function vud_update_finished($success, $results, $operations) {
     drupal_set_message(t('The updated process has been finished. You vote update module is updated to 7.x-2.x branch.'));
 
     // Delete the variable.
-    // todo: bring back when fixing the problem.
-//    variable_del('vud_update_required_7200');
-//    variable_del('vud_update_fields');
+    variable_del('vud_update_required_7200');
+    variable_del('vud_update_fields');
   }
   else {
     // An error occurred.
