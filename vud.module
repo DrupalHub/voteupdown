@@ -844,7 +844,8 @@ function vud_update_create_field($field_name, $cardinality, &$context) {
  * instance.
  */
 function vud_update_collect_field(&$context) {
-  $context['message'] = t('Collecting the entities we need to attach the vote up down field.');
+  $t = 'Collecting the entities we need to attach the vote up down field.';
+  $context['message'] = t($t);
 
   if (!isset($context['sandbox']['progress'])) {
     $context['sandbox']['progress'] = 0;
@@ -897,7 +898,8 @@ function vud_update_collect_field(&$context) {
   $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
 
   // Change the message.
-  $context['message'] = t('Last processed vote ID: @id', array('@id' => $context['sandbox']['vote_id']));
+  $t .= ' Last processed vote ID: @id';
+  $context['message'] = t($t, array('@id' => $context['sandbox']['vote_id']));
 
   // When this batch finished set the variable of the fields.
   if ($context['finished']) {
@@ -926,7 +928,7 @@ function vud_update_attach_field($field, $widget, &$context) {
         '@entity' => $info['label'],
         '@bundle' => $info['bundles'][$bundle]['label'],
       );
-      $context['message'] = t('Attaching the field to @entity of @bundle type', $params);
+      $context['message'] = t('Attaching the field to @entity - @bundle.', $params);
 
       $instance = array(
         'bundle' => $bundle,
@@ -973,11 +975,11 @@ function vud_update_populate_fields(&$context) {
   foreach ($results as $result) {
     $info = entity_get_info($result->entity_type);
     $params = array(
-      '@entity' => $info['label'],
+      '@entity' => strtolower($info['label']),
       '@id' => $result->entity_id,
     );
 
-    $context['message'] = t('Processing @entity:@id', $params);
+    $context['message'] = t('Populating the field for @entity @id.', $params);
 
     $wrapper = entity_metadata_wrapper($result->entity_type, $result->entity_id);
     $votes = VoteUpDown::getResults($result->entity_type, $wrapper->value());
