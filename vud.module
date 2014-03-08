@@ -353,40 +353,58 @@ function vud_getter_callback($entity, array $options, $name, $entity_type, &$con
 function vud_setter_callback($entity, $name, $items, $langcode, $entity_type) {
   $field_info = field_info_field($name);
 
-  if ($field_info['cardinality'] == 1) {
-    if (is_array($items)) {
-      throw new Exception(t('Multiple votes has injected to the vote up down field when the field support a single vote.'));
-    }
+  if (empty($items)) {
+    // The user enter an empty value. Delete the votes related to the entity
+    // which the field attached to.
+    $data = array();
 
-    // Set up the single as an array. This will allow to use a foreach even for
-    // a single value.
-    $items = array($items);
+    list($entity_id) = entity_extract_ids($entity_type, $entity);
+
+    // Delete votes from the DB.
+    $criteria = array(
+      'entity_type' => $entity_type,
+      'entity_id' => $entity_id,
+      'tag' => variable_get('vud_tag', 'vote'),
+    ) + votingapi_current_user_identifier();
+    votingapi_delete_votes(votingapi_select_votes($criteria));
+    votingapi_recalculate_results($entity_type, $entity_id);
   }
+  else {
+    if ($field_info['cardinality'] == 1) {
+      if (is_array($items)) {
+        throw new Exception(t('Multiple votes has injected to the vote up down field when the field support a single vote.'));
+      }
 
-  // Load all the votes for the entity and verify the vote ID exists for this
-  // entity.
-  $votes = VoteUpDown::getResults($entity_type, $entity);
-
-  if ($extras = array_diff($items, array_keys($votes))) {
-    $params = array(
-      '@ids' => implode(', ', $extras),
-      '@id' => reset($extras),
-    );
-
-    if (count($extras) == 1) {
-      $text = 'The vote id @id is not belong to the entity';
-    }
-    else {
-      $text = 'The votes IDs you entered are belong to this entity: @ids.';
+      // Set up the single as an array. This will allow to use a foreach even for
+      // a single value.
+      $items = array($items);
     }
 
-    throw new Exception(t($text, $params));
-  }
+    // Load all the votes for the entity and verify the vote ID exists for this
+    // entity.
+    $votes = VoteUpDown::getResults($entity_type, $entity);
 
-  // Loop over the items and relate it to the key.
-  $data = array();
-  foreach ($items as $item) {
-    $data[]['voteid'] = $item;
+    if ($extras = array_diff($items, array_keys($votes))) {
+      $params = array(
+        '@ids' => implode(', ', $extras),
+        '@id' => reset($extras),
+      );
+
+      if (count($extras) == 1) {
+        $text = 'The vote id @id is not belong to the entity';
+      }
+      else {
+        $text = 'The votes IDs you entered are belong to this entity: @ids.';
+      }
+
+      throw new Exception(t($text, $params));
+    }
+
+    // Loop over the items and relate it to the key.
+    $data = array();
+    foreach ($items as $item) {
+      $data[]['voteid'] = $item;
+    }
   }
 
   $entity->{$name}[$langcode] = $data;
