@@ -110,6 +110,172 @@ function vud_permission() {
 }
 
 /**
+ * Implements hook_theme().
+ *
+ * Declaring themes for plugins.
+ */
+function vud_theme() {
+  $widgets = VoteUpDown::getWidgets();
+
+  $theme = array();
+
+  foreach ($widgets as $widget => $info) {
+    $theme['vud_' . $widget] = array(
+      'template' => 'widget',
+      'path' => $info['path'],
+      'preprocess functions' => array('vud_widget_preprocess'),
+      'variables' => array(
+        'widget' => $widget,
+        'entity_id' => NULL,
+        'entity_type' => NULL,
+      ),
+    );
+  }
+
+  $theme['vud_update'] = array(
+    'render element' => 'form',
+  );
+
+  return $theme;
+}
+
+/**
+ * Pre process function callback.
+ */
+function vud_widget_preprocess(&$variables) {
+  $widget = vud_load_widget($variables['widget']);
+
+  // Get all the assets.
+  $css = empty($widget->settings['assets']['css']) ? '' : $widget->settings['assets']['css'];
+  $js = empty($widget->settings['assets']['js']) ? '' : $widget->settings['assets']['js'];
+
+  // Load tje CSS.
+  if ($css) {
+    foreach ($widget->settings['assets']['css'] as $asset) {
+      drupal_add_css($widget->settings['path'] . '/' . $asset);
+    }
+  }
+
+  // Loading JS.
+  if ($js) {
+    foreach ($widget->settings['assets']['js'] as $asset) {
+      drupal_add_js($widget->settings['path'] . '/' . $asset);
+    }
+  }
+
+  // Adding variables needed in preprocess functions.
+  $variables['classes'] = array();
+  $variables['attributes_array'] = array();
+  $variables['title_attributes_array'] = array();
+  $variables['content_attributes_array'] = array();
+  $variables['classes_array'] = array();
+
+  // Invoking the pre process of the widget.
+  $widget->preprocess($variables);
+}
+
+/**
+ * Access callback for votes.
+ *
+ * @param $permission
+ *  A string containing the permission required to modify the vote.
+ * @param $entity_type
+ *  A string containing the type of content being voted on.
+ * @param $entity_id
+ *  An integer containing the unique ID of the content being voted on.
+ * @param $value
+ *  An integer containing the vote value, 1 for an up vote, -1 for a down vote.
+ * @param $tag
+ *  A string containing the voting API tag.
+ * @param $account
+ *  An object containing the user voting on the content, NULL for the current
+ *  user.
+ *
+ * @return bool
+ *  Boolean flagging whether or not the user has access to the vote.
+ */
+function vud_access_callback($permission, $entity_type, $entity_id, $value, $tag, $account = NULL) {
+  if ($account === NULL) {
+    global $user;
+    $account = $user;
+  }
+
+  // Verify the user has the proper permission.
+  if (user_access($permission, $account) !== TRUE) {
+    return FALSE;
+  }
+
+  // Although the user holds the proper permission we should allow other module
+  // to interrupt during the access function.
+  $access_array = module_invoke_all('vud_access', $permission, $entity_type, $entity_id, $value, $tag, $account);
+
+  foreach ($access_array as $access_result) {
+    if ($access_result !== TRUE) {
+      // One of the module didn't allow this action.
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function vud_ctools_plugin_api($module, $api) {
+  if ($module == 'vud' && $api == 'widgets') {
+    return array('version' => 1);
+  }
+}
+
+/**
+ * Implements hook_ctools_plugin_type().
+ */
+function vud_ctools_plugin_type() {
+  $plugins['widgets'] = array(
+    'classes' => array('class'),
+  );
+
+  return $plugins;
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function vud_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'vud' && $plugin_type == 'widgets') {
+    return 'plugins/widgets';
+  }
+}
+
+/**
+ * Get the widget class.
+ *
+ * @param $widget
+ *  The name of the widget.
+ *
+ * @throws Exception
+ * @return voteUpDownBase
+ */
+function vud_load_widget($widget) {
+  $object_cache = drupal_static(__FUNCTION__);
+
+  if (!isset($object_cache[$widget])) {
+    ctools_include('plugins');
+    $plugin = ctools_get_plugins('vud', 'widgets', $widget);
+    $class = ctools_plugin_load_class('vud', 'widgets', $widget, 'class');
+
+    if (!$class) {
+      throw new Exception(t('The @widget class id undefined', array('@widget' => $plugin['class'])));
+    }
+
+    $object_cache[$widget] = new $class($plugin);
+  }
+
+  return $object_cache[$widget];
+}
+
+/**
  * Implements hook_field_info().
  */
 function vud_field_info() {
@@ -232,172 +398,6 @@ function vud_setter_callback($entity, $name, $items, $langcode, $entity_type) {
  */
 function vud_validation_callback() {
   return TRUE;
-}
-
-/**
- * Implements hook_theme().
- *
- * Declaring themes for plugins.
- */
-function vud_theme() {
-  $widgets = VoteUpDown::getWidgets();
-
-  $theme = array();
-
-  foreach ($widgets as $widget => $info) {
-    $theme['vud_' . $widget] = array(
-      'template' => 'widget',
-      'path' => $info['path'],
-      'preprocess functions' => array('vud_widget_preprocess'),
-      'variables' => array(
-        'widget' => $widget,
-        'entity_id' => NULL,
-        'entity_type' => NULL,
-      ),
-    );
-  }
-
-  $theme['vud_update'] = array(
-    'render element' => 'form',
-  );
-
-  return $theme;
-}
-
-/**
- * Access callback for votes.
- *
- * @param $permission
- *  A string containing the permission required to modify the vote.
- * @param $entity_type
- *  A string containing the type of content being voted on.
- * @param $entity_id
- *  An integer containing the unique ID of the content being voted on.
- * @param $value
- *  An integer containing the vote value, 1 for an up vote, -1 for a down vote.
- * @param $tag
- *  A string containing the voting API tag.
- * @param $account
- *  An object containing the user voting on the content, NULL for the current
- *  user.
- *
- * @return bool
- *  Boolean flagging whether or not the user has access to the vote.
- */
-function vud_access_callback($permission, $entity_type, $entity_id, $value, $tag, $account = NULL) {
-  if ($account === NULL) {
-    global $user;
-    $account = $user;
-  }
-
-  // Verify the user has the proper permission.
-  if (user_access($permission, $account) !== TRUE) {
-    return FALSE;
-  }
-
-  // Although the user holds the proper permission we should allow other module
-  // to interrupt during the access function.
-  $access_array = module_invoke_all('vud_access', $permission, $entity_type, $entity_id, $value, $tag, $account);
-
-  foreach ($access_array as $access_result) {
-    if ($access_result !== TRUE) {
-      // One of the module didn't allow this action.
-      return FALSE;
-    }
-  }
-
-  return TRUE;
-}
-
-/**
- * Pre process function callback.
- */
-function vud_widget_preprocess(&$variables) {
-  $widget = vud_load_widget($variables['widget']);
-
-  // Get all the assets.
-  $css = empty($widget->settings['assets']['css']) ? '' : $widget->settings['assets']['css'];
-  $js = empty($widget->settings['assets']['js']) ? '' : $widget->settings['assets']['js'];
-
-  // Load tje CSS.
-  if ($css) {
-    foreach ($widget->settings['assets']['css'] as $asset) {
-      drupal_add_css($widget->settings['path'] . '/' . $asset);
-    }
-  }
-
-  // Loading JS.
-  if ($js) {
-    foreach ($widget->settings['assets']['js'] as $asset) {
-      drupal_add_js($widget->settings['path'] . '/' . $asset);
-    }
-  }
-
-  // Adding variables needed in preprocess functions.
-  $variables['classes'] = array();
-  $variables['attributes_array'] = array();
-  $variables['title_attributes_array'] = array();
-  $variables['content_attributes_array'] = array();
-  $variables['classes_array'] = array();
-
-  // Invoking the pre process of the widget.
-  $widget->preprocess($variables);
-}
-
-/**
- * Implements hook_ctools_plugin_api().
- */
-function vud_ctools_plugin_api($module, $api) {
-  if ($module == 'vud' && $api == 'widgets') {
-    return array('version' => 1);
-  }
-}
-
-/**
- * Implements hook_ctools_plugin_type().
- */
-function vud_ctools_plugin_type() {
-  $plugins['widgets'] = array(
-    'classes' => array('class'),
-  );
-
-  return $plugins;
-}
-
-/**
- * Implements hook_ctools_plugin_directory().
- */
-function vud_ctools_plugin_directory($owner, $plugin_type) {
-  if ($owner == 'vud' && $plugin_type == 'widgets') {
-    return 'plugins/widgets';
-  }
-}
-
-/**
- * Get the widget class.
- *
- * @param $widget
- *  The name of the widget.
- *
- * @throws Exception
- * @return voteUpDownBase
- */
-function vud_load_widget($widget) {
-  $object_cache = drupal_static(__FUNCTION__);
-
-  if (!isset($object_cache[$widget])) {
-    ctools_include('plugins');
-    $plugin = ctools_get_plugins('vud', 'widgets', $widget);
-    $class = ctools_plugin_load_class('vud', 'widgets', $widget, 'class');
-
-    if (!$class) {
-      throw new Exception(t('The @widget class id undefined', array('@widget' => $plugin['class'])));
-    }
-
-    $object_cache[$widget] = new $class($plugin);
-  }
-
-  return $object_cache[$widget];
 }
 
 /**
