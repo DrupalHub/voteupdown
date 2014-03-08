@@ -123,17 +123,6 @@ class VoteUpDown {
   }
 
   /**
-   * Deleting a vote.
-   */
-  public function deleteVote() {
-    if (!$this->vote_id) {
-      $this->missingVote();
-    }
-
-    // todo: Delete the vote and remove the reference.
-  }
-
-  /**
    * The vote ID is missing.
    */
   private function missingVote() {
