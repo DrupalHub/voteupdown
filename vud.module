@@ -352,7 +352,6 @@ function vud_getter_callback($entity, array $options, $name, $entity_type, &$con
  */
 function vud_setter_callback($entity, $name, $items, $langcode, $entity_type) {
   $field_info = field_info_field($name);
-
   if (empty($items)) {
     // The user enter an empty value. Delete the votes related to the entity
     // which the field attached to.
@@ -364,8 +363,8 @@ function vud_setter_callback($entity, $name, $items, $langcode, $entity_type) {
     $criteria = array(
       'entity_type' => $entity_type,
       'entity_id' => $entity_id,
-      'tag' => variable_get('vud_tag', 'vote'),
-    ) + votingapi_current_user_identifier();
+    );
+
     votingapi_delete_votes(votingapi_select_votes($criteria));
     votingapi_recalculate_results($entity_type, $entity_id);
   }
