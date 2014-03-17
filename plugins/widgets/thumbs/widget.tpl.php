@@ -4,7 +4,7 @@
  *   Template for thumbs widget.
  */
 ?>
-<div class="vud-widget vud-widget-thumbs" id="<?php print $id; ?>">
+<div class="vud-widget vud-widget-thumbs clearfix" id="<?php print $id; ?>">
   <div class="up-score clear-block">
     <?php if ($show_links): ?>
       <?php if ($show_up_as_link): ?>

@@ -8,7 +8,7 @@
  * TODO use $show_up_as_link and $show_down_as_link
  */
 ?>
-<div class="vud-widget vud-widget-upanddown" id="<?php print $id; ?>">
+<div class="vud-widget vud-widget-upanddown clearfix" id="<?php print $id; ?>">
   <div class="up-score clear-block">
     <?php if ($show_links): ?>
       <?php if ($show_up_as_link): ?>

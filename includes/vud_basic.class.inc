@@ -122,7 +122,7 @@ class voteUpDownBase implements voteUpDownInterface {
   public function preprocess(&$variables) {
     // Default value of the variables.
     $variables += array(
-      'widget_message_code' => vud_WIDGET_MESSAGE_DENIED,
+      'widget_message_code' => VUD_WIDGET_MESSAGE_DENIED,
       'readonly' => FALSE,
       'tag' => variable_get('vud_tag', 'vote'),
       'id' => 'widget-' . $variables['entity_type'] . '-' . $variables['entity_id'],

@@ -6,11 +6,13 @@
  */
 
 /**
- * Plugin decleration.
+ * Plugin declaration.
  */
 $plugin = array(
   'title' => t('Plain'),
+  'class' => 'voteUpDownBase',
   'description' => t('Plain widget.'),
-  'widget template' => 'widget',
-  'votes template' => 'votes',
+  'assets' => array(
+    'css' => array('alternate.css'),
+  ),
 );

@@ -6,7 +6,7 @@
  * Alternate widget theme for Vote Up/Down
  */
 ?>
-<div class="vud-widget vud-widget-alternate" id="<?php print $id; ?>">
+<div class="vud-widget vud-widget-alternate clearfix" id="<?php print $id; ?>">
   <?php if ($class_up) : ?>
     <div class="alternate-votes-display"><?php print $unsigned_points; ?></div>
     <?php if ($show_links): ?>
