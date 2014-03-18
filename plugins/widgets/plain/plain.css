@@ -1,7 +1,9 @@
 
 .vud-widget-plain {
-  float: left;
   clear: left;
+}
+
+.vud-widget-plain .buttons {
   padding: 2px;
   margin: 2px 5px 0 0;
   border: 1px solid #ccc;

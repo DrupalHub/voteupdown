@@ -13,6 +13,6 @@ $plugin = array(
   'class' => 'voteUpDownBase',
   'description' => t('Alternate widget.'),
   'assets' => array(
-    'css' => array('alternate.css'),
+    'css' => array('plain.css'),
   ),
 );
