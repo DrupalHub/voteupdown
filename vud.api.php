@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Hooks documentations.
@@ -30,4 +29,18 @@ function hook_vud_access($perm, $entity_type, $entity_id, $value, $tag, $account
   if ($account->uid != 1) {
     return FALSE;
   }
+}
+
+/**
+ * Modify the vote just before it is casted.
+ *
+ * @param $votes
+ *   A votes array that is going to be passed to votingapi_set_votes()
+ *   function.
+ */
+function hook_vud_votes(&$votes) {
+  // let's add a new vote at the same time with an own vote tag
+  $new_vote = $votes[0];
+  $new_vote['tag'] = 'our_custom_tag';
+  $votes[] = $new_vote;
 }
